@@ -15,40 +15,20 @@
 #include "esp_flash.h"
 #include "esp_system.h"
 #include "esp_intr_types.h"
+#include "esp_timer.h"
 
 // Driver Libraries
 #include "driver/gpio.h"
 #include "driver/ledc.h"
 
-// GPIO Defines
-#define LED_R   GPIO_NUM_26
-#define LED_G   GPIO_NUM_25
-#define LED_B   GPIO_NUM_33
-#define LED_PWR GPIO_NUM_27
-#define L_BTN   GPIO_NUM_35
-#define R_BTN   GPIO_NUM_32
+// Private Libraries
+#include "CozyLED.h"
 
-// LED Bit Mask
-#define LED_R_BIT_MASK (1ULL << LED_R)
-#define LED_G_BIT_MASK (1ULL << LED_G)
-#define LED_B_BIT_MASK (1ULL << LED_B)
-
-// LED Controller Defines
-#define LEDC_TIMER      LEDC_TIMER_0
-#define LEDC_MODE       LEDC_LOW_SPEED_MODE
-#define LEDC_CHANNEL    LEDC_CHANNEL_0
-#define LEDC_DUTY_RES   LEDC_TIMER_13_BIT   // Set duty resolution to 13-bits
-#define LEDC_DUTY       (2048)              // Set duty to 25% (2 ** 13) * 25% = 2048
-#define LEDC_FREQUENCY  (5000)              // Frequency in Hz
-#define LEDC_FADE_TIME  (3000)
-#define LEDC_MAX_RES    (7373)             // Max duty 90% (2 ** 13) * 90% ~ 7373
-
-enum STATE {
-    INIT = 0,
-    DEFAULT,
-    L_COLOR,
-    R_COLOR
-};
+// Globals
+volatile unsigned long leftBtnTime = 0;
+volatile unsigned long leftLastBtnTime = 0;
+volatile unsigned long rightBtnTime = 0;
+volatile unsigned long rightLastBtnTime = 0;
 
 void chip_data(void){
     /* Print chip information */
@@ -102,7 +82,34 @@ static void led_init(){
 struct led_setting {
     gpio_num_t pin;
 };
+
+struct btn_status LBtn;
+struct btn_status RBtn;
 gpio_config_t myGPIO;
+
+// Millis timer
+static uint32_t millis(){
+    return esp_timer_get_time() / 1000;
+}
+
+// ISRs
+void left_btn_isr(){
+    leftBtnTime= millis();
+    if (leftBtnTime - leftLastBtnTime > 250){
+        LBtn.numberPress++;
+        LBtn.pressed = true;
+        leftLastBtnTime = leftBtnTime;
+    }
+}
+
+void right_btn_isr(){
+    rightBtnTime = millis();
+    if (rightBtnTime - rightLastBtnTime > 250){
+        RBtn.numberPress++;
+        RBtn.pressed = true;
+        rightLastBtnTime = rightBtnTime;
+    }
+}
 
 static void gpio_init(void){
     // Initialization of the GPIO pins
@@ -113,21 +120,50 @@ static void gpio_init(void){
     myGPIO.mode         = GPIO_MODE_OUTPUT;
     gpio_config(&myGPIO);
 
+    // Initialization of ISRs
+    gpio_install_isr_service(ESP_INTR_FLAG_LEVEL1);
+    gpio_isr_handler_add(L_BTN, left_btn_isr, NULL);
+    gpio_set_intr_type(L_BTN, GPIO_INTR_POSEDGE);
+
+    gpio_isr_handler_add(R_BTN, right_btn_isr, NULL);
+    gpio_set_intr_type(R_BTN, GPIO_INTR_POSEDGE);
+
+    // Initialization of the peripherals
     gpio_set_direction(LED_PWR, GPIO_MODE_OUTPUT);
     gpio_set_direction(L_BTN, GPIO_MODE_INPUT);
+    gpio_input_enable(L_BTN);
     gpio_set_direction(R_BTN, GPIO_MODE_INPUT);
-    gpio_set_level(LED_G, true);
-    gpio_set_level(LED_B, true);
-
+    gpio_input_enable(R_BTN);
 }
 
-void app_main(void){
-    
-    struct led_setting led_color;
-    // State Declaration
-    int CURR_STATE = INIT;
 
+
+void app_main(void){
+    /** Interrupts **/
+    gpio_init();
+    printf("Initialization done\n");
     while(1){
+        printf("Waiting for button press\n");
+        if (LBtn.pressed == true){
+            printf("Left button pressed %lu times\n", LBtn.numberPress);
+            LBtn.pressed = false;
+        }
+        else if (RBtn.pressed == true){
+            printf("Right button pressed %lu times\n", RBtn.numberPress);
+            RBtn.pressed = false;
+        }
+        vTaskDelay(50);
+    }
+    
+    //gpio_set_intr_type(R_BTN, GPIO_INTR_ANYEDGE);
+    
+
+    /**************************************************************/
+    //struct led_setting led_color;
+    // State Declaration
+    //int CURR_STATE = INIT;
+
+    /*while(1){
         printf("State machine\n");
         switch (CURR_STATE)
         {
@@ -202,9 +238,9 @@ void app_main(void){
         }
         
         // Breathing Function
-        //int LED_Duty = LEDC_MAX_RES;
-        //int dutyChange = (LEDC_MAX_RES / (2 * LEDC_DUTY_RES));
-        /*for (;;){
+        int LED_Duty = LEDC_MAX_RES;
+        int dutyChange = (LEDC_MAX_RES / (2 * LEDC_DUTY_RES));
+        for (;;){
             // LED 100% Duty
             //printf("LEDC Set duty = %d\n\n", LED_Duty);
             if (LED_Duty - dutyChange < 0){                     // If next duty change is zero or negative, enter
@@ -221,8 +257,6 @@ void app_main(void){
 
             vTaskDelay(100 / portTICK_PERIOD_MS);
             LED_Duty -= dutyChange;
-        }*/
-
-
-    }
+        }
+    }*/
 }
