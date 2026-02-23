@@ -32,6 +32,7 @@ volatile unsigned long rightLastBtnTime = 0;
 
 // State Declaration
 int CURR_STATE = INIT;
+int last_button = NONE;
 
 static void ledc_init(){
     ledc_timer_config_t ledc_timer = {
@@ -56,7 +57,10 @@ static void ledc_init(){
 }
 
 struct led_setting {
-    gpio_num_t pin;
+    gpio_num_t current_pin;
+    gpio_num_t prev_pin;
+    int color;
+    int last_button;
 };
 
 struct btn_status LBtn;
@@ -72,20 +76,32 @@ static uint32_t millis(){
 void left_btn_isr(){
     leftBtnTime= millis();
     if (leftBtnTime - leftLastBtnTime > 250){
-        LBtn.numberPress++;
         LBtn.pressed = true;
         leftLastBtnTime = leftBtnTime;
-        CURR_STATE = L_COLOR;
+        if (CURR_STATE == YTP){
+            CURR_STATE = RGB;
+        }
+        else {
+            CURR_STATE = YTP;
+            last_button = LEFT;
+
+        }
     }
 }
 
 void right_btn_isr(){
     rightBtnTime = millis();
     if (rightBtnTime - rightLastBtnTime > 250){
-        RBtn.numberPress++;
         RBtn.pressed = true;
         rightLastBtnTime = rightBtnTime;
-        CURR_STATE = R_COLOR;
+        if (CURR_STATE == YTP){
+            CURR_STATE = RGB;
+        }
+        else {
+            CURR_STATE = YTP;
+            last_button = RIGHT;
+
+        }
     }
 }
 
@@ -107,7 +123,7 @@ static void gpio_init(void){
 
     // Initialization of the peripherals
     gpio_set_direction(LED_PWR, GPIO_MODE_OUTPUT);
-    gpio_set_level(LED_R, true);
+    gpio_set_level(LED_R, false);
     gpio_set_level(LED_G, true);
     gpio_set_level(LED_B, true);
     gpio_set_direction(L_BTN, GPIO_MODE_INPUT);    
@@ -118,58 +134,166 @@ static void gpio_init(void){
 
 void app_main(void){
     struct led_setting led_color;
+    
     // LED FSM
     while(1){
+        //printf("Current state: %d, Button: L %d / R %d\n", CURR_STATE, LBtn.pressed, RBtn.pressed);
         switch (CURR_STATE){
         case INIT:
             printf("Initializing, state: %d\n", CURR_STATE);
             //led_init();
             gpio_init();
-            led_color.pin = LED_R;
+            led_color.current_pin = LED_R;
+            led_color.color = RED;
             gpio_set_level(LED_PWR, true);
-            CURR_STATE = DEFAULT;
+            CURR_STATE = RGB;
             vTaskDelay(10);
             break;
         
-        case DEFAULT:
-            gpio_set_level(led_color.pin, false);
-            vTaskDelay(10);
+        case RGB:
+            /* Left Button */
+            // Yellow -> Red
+            if (LBtn.pressed && led_color.color == YELLOW){
+                if (last_button == LEFT){
+                    gpio_set_level(led_color.prev_pin, true);
+                }
+                else {
+                    gpio_set_level(led_color.current_pin, true);
+                }
+                led_color.prev_pin = led_color.current_pin;
+                led_color.current_pin = LED_R;
+                led_color.color = RED;
+                LBtn.pressed = false;
+            }
+            // Teal -> Green
+            else if (LBtn.pressed && led_color.color == TEAL){
+                if (last_button == LEFT){
+                    gpio_set_level(led_color.prev_pin, true);
+                }
+                else {
+                    gpio_set_level(led_color.current_pin, true);
+                }
+                led_color.prev_pin = led_color.current_pin;
+                led_color.current_pin = LED_G;
+                led_color.color = GREEN;
+                LBtn.pressed = false;
+            }
+            // Purple -> Blue
+            else if (LBtn.pressed && led_color.color == PURPLE){
+                if (last_button == LEFT){
+                    gpio_set_level(led_color.prev_pin, true);
+                }
+                else {
+                    gpio_set_level(led_color.current_pin, true);
+                }
+                led_color.prev_pin = led_color.current_pin;
+                led_color.current_pin = LED_B;
+                led_color.color = BLUE;
+                LBtn.pressed = false;
+            }
+
+            /* Right Button */
+            // Yellow -> Green
+            else if (RBtn.pressed && led_color.color == YELLOW){
+                if (last_button == RIGHT){
+                    gpio_set_level(led_color.prev_pin, true);
+                }
+                else {
+                    gpio_set_level(led_color.current_pin, true);
+                }
+                led_color.prev_pin = led_color.current_pin;
+                led_color.current_pin = LED_G;
+                led_color.color = GREEN;
+                RBtn.pressed = false;
+            }
+            // Teal -> Blue
+            else if (RBtn.pressed && led_color.color == TEAL){
+                if (last_button == RIGHT){
+                    gpio_set_level(led_color.prev_pin, true);
+                }
+                else {
+                    gpio_set_level(led_color.current_pin, true);
+                }
+                led_color.prev_pin = led_color.current_pin;
+                led_color.current_pin = LED_B;
+                led_color.color = BLUE;
+                RBtn.pressed = false;
+            }
+            // Purple -> Red
+            else if (RBtn.pressed && led_color.color == PURPLE){
+                if (last_button == RIGHT){
+                    gpio_set_level(led_color.prev_pin, true);
+                }
+                else {
+                    gpio_set_level(led_color.current_pin, true);
+                }
+                led_color.prev_pin = led_color.current_pin;
+                led_color.current_pin = LED_R;
+                led_color.color = RED;
+                RBtn.pressed = false;
+            }
             break;
 
-        case L_COLOR:
-            printf("Left button pressed, state: %d\n", CURR_STATE);
-            // If L button has been pressed, change color to previous color
-            gpio_set_level(led_color.pin, true);
-            if (led_color.pin == LED_R){
-                led_color.pin = LED_B;
-            }
-            else if (led_color.pin == LED_G){
-                led_color.pin = LED_R;
-            }
-            else if (led_color.pin == LED_B){
-                led_color.pin = LED_G;
-            }
-            // After actions, return to default state
-            CURR_STATE = DEFAULT;
-            vTaskDelay(10);
-            break;
+/****************************************************************************************************************************/
 
-        case R_COLOR:
-            printf("Right button pressed, state: %d\n", CURR_STATE);
-            // If right button is pressed, change color to next color
-            gpio_set_level(led_color.pin, true);
-            if (led_color.pin == LED_R){
-                led_color.pin = LED_G;
+        case YTP:            
+            /* Left Button */
+            // Red -> Purple
+            if (LBtn.pressed && led_color.color == RED){
+                
+                led_color.prev_pin = led_color.current_pin;
+                led_color.current_pin = LED_B;
+                led_color.color = PURPLE;
+                LBtn.pressed = false;
+                gpio_set_level(led_color.current_pin, false);
             }
-            else if(led_color.pin == LED_G){
-                led_color.pin = LED_B;
+
+            // Green -> Yellow
+            else if (LBtn.pressed && led_color.color == GREEN){
+                
+                led_color.prev_pin = led_color.current_pin;
+                led_color.current_pin = LED_R;
+                led_color.color = YELLOW;
+                LBtn.pressed = false;
+                gpio_set_level(led_color.current_pin, false);
             }
-            else if (led_color.pin == LED_B){
-                led_color.pin = LED_R;
+
+            // Blue -> Teal
+            else if (LBtn.pressed && led_color.color == BLUE){
+                
+                led_color.prev_pin = led_color.current_pin;
+                led_color.current_pin = LED_G;
+                led_color.color = TEAL;
+                LBtn.pressed = false;
+                gpio_set_level(led_color.current_pin, false);
             }
-            // After actions, return to default state
-            CURR_STATE = DEFAULT;
-            vTaskDelay(10);
+
+            /* Right Button */
+            // Red -> Yellow
+            else if (RBtn.pressed && led_color.color == RED){
+                
+                led_color.prev_pin = led_color.current_pin;
+                led_color.current_pin = LED_G;
+                led_color.color = YELLOW;
+                RBtn.pressed = false;
+                gpio_set_level(led_color.current_pin, false);
+            }
+            // Green -> Teal
+            else if (RBtn.pressed && led_color.color == GREEN){
+                led_color.prev_pin = led_color.current_pin;
+                led_color.current_pin = LED_B;
+                led_color.color = TEAL;
+                RBtn.pressed = false;
+                gpio_set_level(led_color.current_pin, false);
+            }
+            // Blue -> Purple
+            else if (RBtn.pressed && led_color.color == BLUE){
+                led_color.prev_pin = led_color.current_pin;
+                led_color.current_pin = LED_R;
+                led_color.color = PURPLE;
+                RBtn.pressed = false;
+                gpio_set_level(led_color.current_pin, false);
+            }
             break;
 
         default:
@@ -177,6 +301,7 @@ void app_main(void){
             vTaskDelay(100);
             break;
         }
+        vTaskDelay(10);
         
         /*// Breathing Function
         int LED_Duty = LEDC_MAX_RES;

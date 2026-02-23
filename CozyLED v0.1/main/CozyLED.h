@@ -30,14 +30,27 @@
 
 enum STATE {
     INIT = 0,
-    DEFAULT,
-    L_COLOR,
-    R_COLOR
+    RGB,
+    YTP
+};
+
+enum NEXT_COLOR {
+    RED = 0,
+    YELLOW,
+    GREEN,
+    TEAL,
+    BLUE,
+    PURPLE
+};
+
+enum PIN {
+    NONE = 0,
+    LEFT,
+    RIGHT
 };
 
 struct btn_status {
     const uint8_t PIN;
-    volatile uint32_t numberPress;
     volatile bool pressed;
 };
 
