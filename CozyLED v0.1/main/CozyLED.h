@@ -3,14 +3,34 @@
 
 #include <inttypes.h>
 
+// Variable Defines
+#define HOLD_TIMER      25000
+
+// I2C Defines
+#define I2C_ADDR        0x3C
+#define I2C_SLAVE_NUM   I2C_NUM_0
+
+// LCD Defines
+#define DISPL_X         0x80
+#define DISPL_Y         0x40
+#define LEFT_TRI_X      0x05
+
+#define RIGHT_TRI_X     0x7B        // 112 x
+#define TRI_Y           0x20        // 32 y
+#define TRI_0           0xFF
+#define TRI_1           0x7E
+#define TRI_2           0x3C
+#define TRI_3           0x18
 
 // GPIO Defines
-#define LED_R   GPIO_NUM_26
-#define LED_G   GPIO_NUM_25
-#define LED_B   GPIO_NUM_33
-#define LED_PWR GPIO_NUM_27
-#define L_BTN   GPIO_NUM_35
-#define R_BTN   GPIO_NUM_34
+#define LED_R           GPIO_NUM_26
+#define LED_G           GPIO_NUM_25
+#define LED_B           GPIO_NUM_33
+#define LED_PWR         GPIO_NUM_27
+#define L_BTN           GPIO_NUM_35
+#define R_BTN           GPIO_NUM_34
+#define SDA             GPIO_NUM_14
+#define SCL             GPIO_NUM_12
 
 // LED Bit Mask
 #define LED_R_BIT_MASK (1ULL << LED_R)
@@ -31,7 +51,9 @@
 enum STATE {
     INIT = 0,
     RGB,
-    YTP
+    YTP,
+    BREATHE,
+    WAVE
 };
 
 enum NEXT_COLOR {
@@ -47,6 +69,12 @@ enum PIN {
     NONE = 0,
     LEFT,
     RIGHT
+};
+
+enum MODE {
+  LCD_STATIC = 0,
+  LCD_WAVE,
+  LCD_BREATHE
 };
 
 struct btn_status {
