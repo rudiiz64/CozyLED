@@ -78,31 +78,20 @@ static uint32_t lmillis(){
 
 // ISRs
 void left_btn_isr(){
-    int timer = 0;
     leftBtnTime = lmillis();
     if (leftBtnTime - leftLastBtnTime > 250){
         LBtn.pressed = true;
         leftLastBtnTime = leftBtnTime;
-        while (gpio_get_level(L_BTN)  == true){
-            timer++;
-            if (timer >= HOLD_TIMER){
-                break;
-            }
-        }
+        
         /* Static color check transition */
-        if (CURR_STATE == YTP && timer < HOLD_TIMER){
+        if (CURR_STATE == YTP && LBtn.locked == false){
            CURR_STATE = RGB;
         }
         /* Static color check transition */
-        else if (CURR_STATE == RGB && timer < HOLD_TIMER) {
+        else if (CURR_STATE == RGB && LBtn.locked == false) {
            CURR_STATE = YTP;
            last_button = LEFT;
         }
-        /* Mode change check */
-        else if ((CURR_STATE == YTP || CURR_STATE == RGB)  && timer >= HOLD_TIMER){
-            CURR_STATE = WAVE;
-        }
-        
     }
 }
 
@@ -111,13 +100,12 @@ void right_btn_isr(){
     if (rightBtnTime - rightLastBtnTime > 250){
         RBtn.pressed = true;
         rightLastBtnTime = rightBtnTime;
-        if (CURR_STATE == YTP){
+        if (CURR_STATE == YTP && (RBtn.locked == false)){
             CURR_STATE = RGB;
         }
-        else {
+        else if (CURR_STATE == RGB && (RBtn.locked == false)) {
             CURR_STATE = YTP;
             last_button = RIGHT;
-
         }
     }
 }
@@ -134,9 +122,9 @@ static void gpio_init(void){
     // Initialization of ISRs
     gpio_install_isr_service(ESP_INTR_FLAG_LEVEL1);
     gpio_isr_handler_add(L_BTN, left_btn_isr, NULL);
-    gpio_set_intr_type(L_BTN, GPIO_INTR_POSEDGE);
+    gpio_set_intr_type(L_BTN, GPIO_INTR_NEGEDGE);
     gpio_isr_handler_add(R_BTN, right_btn_isr, NULL);
-    gpio_set_intr_type(R_BTN, GPIO_INTR_POSEDGE);
+    gpio_set_intr_type(R_BTN, GPIO_INTR_NEGEDGE);
 
     // Initialization of the peripherals
     gpio_set_direction(LED_PWR, GPIO_MODE_OUTPUT);
@@ -204,10 +192,50 @@ static void disp_init(void){
 }
 
 void app_main(void){
+    int holdTimer = 0;
 
     // LED FSM
     while(1){
         //printf("Current state: %d, Button: L %d / R %d\n", CURR_STATE, LBtn.pressed, RBtn.pressed);
+
+        /* If user is holding left button, disable right button */
+        while(gpio_get_level(L_BTN) && (CURR_STATE != INIT)){
+            gpio_set_direction(R_BTN, GPIO_MODE_DISABLE);
+            holdTimer++;
+            if (holdTimer >= HOLD_TIMER){                                           // If holdTimer exceeds 2 sec, change state and break
+                LBtn.locked = true;                                      
+                holdTimer = 0;
+                if (CURR_STATE == RGB || CURR_STATE == YTP){                         // If we are in RGB/YTP, then we just loop to last state WAVE (4)
+                    CURR_STATE = WAVE;
+                }
+                else {                                                               // If we are not in RGB/YTP, subtract 1
+                    CURR_STATE = CURR_STATE - 1;
+                }
+                break;
+            }
+            vTaskDelay(1);
+        }
+
+        /* If user is holding right button, disable left button */
+        while(gpio_get_level(R_BTN) && (CURR_STATE != INIT)){
+            gpio_set_direction(L_BTN, GPIO_MODE_DISABLE);
+            holdTimer++;
+            if (holdTimer >= HOLD_TIMER){                       // If holdTimer exceeds 2 sec, change state and break
+                RBtn.locked = true;
+                holdTimer = 0;
+                if (CURR_STATE == WAVE){                         // If we are in WAVE (4), then we just loop to first state RGB (1)
+                    CURR_STATE = RGB;
+                }
+                else if (CURR_STATE == RGB || CURR_STATE == YTP){                                          // If we are not in WAVE, just add 1 from enum
+                    CURR_STATE = BREATHE;
+                }
+                else {
+                    CURR_STATE = CURR_STATE + 1;
+                }
+                break;
+            }
+            vTaskDelay(1);
+        }
         switch (CURR_STATE){
         case INIT:
             gpio_init();
@@ -217,16 +245,16 @@ void app_main(void){
             led_color.current_pin = LED_R;
             led_color.color = RED;
             gpio_set_level(LED_PWR, true);
-            CURR_STATE = BREATHE;
+            CURR_STATE = RGB;
             led_color.mode = LCD_STATIC;
 
             vTaskDelay(100);
             break;
         
         case RGB:
-            ssd1306_printFixed((DISPL_X >> 2), (DISPL_Y >> 1), "Mode: WAVE   ", STYLE_NORMAL);
-
             /* Left Button */
+            printf("State: Static\n");
+            ssd1306_printFixed((DISPL_X >> 2), (DISPL_Y >> 1), "Mode: STATIC", STYLE_NORMAL);
             // Yellow -> Red
             // if (LBtn.pressed && led_color.color == YELLOW){
             //     if (last_button == LEFT){
@@ -312,6 +340,8 @@ void app_main(void){
 /****************************************************************************************************************************/
 
         case YTP:            
+            printf("State: Static2\n");
+            ssd1306_printFixed((DISPL_X >> 2), (DISPL_Y >> 1), "Mode: STATIC   ", STYLE_NORMAL);
             /* Left Button */
             //Red -> Purple
             // if (LBtn.pressed && led_color.color == RED){
@@ -372,6 +402,9 @@ void app_main(void){
             break;
 
         case BREATHE:
+
+            ssd1306_printFixed((DISPL_X >> 2), (DISPL_Y >> 1), "Mode: BREATHE", STYLE_NORMAL);
+            printf("In breathe\n");
         /* 
             while (button press == true AND button signal is HIGH){
                 btnTimer++;
@@ -391,21 +424,13 @@ void app_main(void){
             }
             break;
         */
-            int timer = 0;
-            while (gpio_get_level(L_BTN) == true || gpio_get_level(R_BTN == true)){
-                timer++;
-                printf("Timer: %d\n", timer);
-            }
-
-            
-            
-
             //CURR_STATE = RGB;
-            vTaskDelay(10);
             break;
 
 
         case WAVE:
+            ssd1306_printFixed((DISPL_X >> 2), (DISPL_Y >> 1), "Mode: WAVE   ", STYLE_NORMAL);
+            printf("In wave\n");
             break;
 
         default:
@@ -413,8 +438,19 @@ void app_main(void){
             vTaskDelay(100);
             break;
         }
+
+        /* After buttons are no longer held, re-enable them */
+        holdTimer = 0;
+        if (LBtn.pressed){
+            LBtn.locked = false;
+            gpio_set_direction(R_BTN, GPIO_MODE_INPUT);
+        }
+        else if (RBtn.pressed){
+            RBtn.locked = false;
+            gpio_set_direction(L_BTN, GPIO_MODE_INPUT);
+        }
         vTaskDelay(10);
-        
+
         /*// Breathing Function
         int LED_Duty = LEDC_MAX_RES;
         int dutyChange = (LEDC_MAX_RES / (2 * LEDC_DUTY_RES));

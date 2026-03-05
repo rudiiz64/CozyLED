@@ -4,7 +4,7 @@
 #include <inttypes.h>
 
 // Variable Defines
-#define HOLD_TIMER      25000
+#define HOLD_TIMER      250
 
 // I2C Defines
 #define I2C_ADDR        0x3C
@@ -80,6 +80,7 @@ enum MODE {
 struct btn_status {
     const uint8_t PIN;
     volatile bool pressed;
+    volatile bool locked;
 };
 
 
