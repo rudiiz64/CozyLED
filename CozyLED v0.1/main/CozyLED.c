@@ -37,25 +37,68 @@ int CURR_STATE = INIT;
 int last_button = NONE;
 
 static void ledc_init(){
-    ledc_timer_config_t ledc_timer = {
+    /* RED LED SETUP */
+    ledc_timer_config_t ledc_timer0 = {
         .speed_mode      = LEDC_MODE,               // High or low speed
         .duty_resolution = LEDC_DUTY_RES,           // Max Range of cap, [0, 2 ** duty_resolution]
-        .timer_num       = LEDC_TIMER,              // Controller Timer
+        .timer_num       = LEDC_TIMER_0,              // Controller Timer
         .freq_hz         = LEDC_FREQUENCY,          // Frequency (higher freq -> lower res, lower freq -> higher res)
         .clk_cfg         = LEDC_AUTO_CLK            // Clock config, pre-defined
     };
-    ESP_ERROR_CHECK(ledc_timer_config(&ledc_timer));
+    ESP_ERROR_CHECK(ledc_timer_config(&ledc_timer0));
 
-    ledc_channel_config_t ledc_channel = {
+    ledc_channel_config_t ledc_channel0 = {
         .speed_mode      = LEDC_MODE,               // High or low speed
-        .channel         = LEDC_CHANNEL,            // Channel per controller
-        .timer_sel       = LEDC_TIMER,              // Controller timer
+        .channel         = LEDC_CHANNEL_0,            // Channel per controller
+        .timer_sel       = LEDC_TIMER_0,              // Controller timer
+        .intr_type       = LEDC_INTR_DISABLE,       // Interrupt type
+        .gpio_num        = LED_R,                   // GPIO assignment
+        .duty            = 0,                       // Channel duty
+        .hpoint          = 0                        // Horizontal point / phase control; [0, 2 ** duty_resolution - 1]
+    };
+    ESP_ERROR_CHECK(ledc_channel_config(&ledc_channel0));
+
+    /* GREEN LED SETUP */
+    ledc_timer_config_t ledc_timer1 = {
+        .speed_mode      = LEDC_MODE,               // High or low speed
+        .duty_resolution = LEDC_DUTY_RES,           // Max Range of cap, [0, 2 ** duty_resolution]
+        .timer_num       = LEDC_TIMER_1,              // Controller Timer
+        .freq_hz         = LEDC_FREQUENCY,          // Frequency (higher freq -> lower res, lower freq -> higher res)
+        .clk_cfg         = LEDC_AUTO_CLK            // Clock config, pre-defined
+    };
+    ESP_ERROR_CHECK(ledc_timer_config(&ledc_timer1));
+
+    ledc_channel_config_t ledc_channel1 = {
+        .speed_mode      = LEDC_MODE,               // High or low speed
+        .channel         = LEDC_CHANNEL_1,            // Channel per controller
+        .timer_sel       = LEDC_TIMER_1,              // Controller timer
         .intr_type       = LEDC_INTR_DISABLE,       // Interrupt type
         .gpio_num        = LED_G,                   // GPIO assignment
         .duty            = 0,                       // Channel duty
         .hpoint          = 0                        // Horizontal point / phase control; [0, 2 ** duty_resolution - 1]
     };
-    ESP_ERROR_CHECK(ledc_channel_config(&ledc_channel));
+    ESP_ERROR_CHECK(ledc_channel_config(&ledc_channel1));
+
+    /* BLUE LED SETUP */
+    ledc_timer_config_t ledc_timer2 = {
+        .speed_mode      = LEDC_MODE,               // High or low speed
+        .duty_resolution = LEDC_DUTY_RES,           // Max Range of cap, [0, 2 ** duty_resolution]
+        .timer_num       = LEDC_TIMER_2,              // Controller Timer
+        .freq_hz         = LEDC_FREQUENCY,          // Frequency (higher freq -> lower res, lower freq -> higher res)
+        .clk_cfg         = LEDC_AUTO_CLK            // Clock config, pre-defined
+    };
+    ESP_ERROR_CHECK(ledc_timer_config(&ledc_timer2));
+
+    ledc_channel_config_t ledc_channel2 = {
+        .speed_mode      = LEDC_MODE,               // High or low speed
+        .channel         = LEDC_CHANNEL_2,            // Channel per controller
+        .timer_sel       = LEDC_TIMER_2,              // Controller timer
+        .intr_type       = LEDC_INTR_DISABLE,       // Interrupt type
+        .gpio_num        = LED_B,                   // GPIO assignment
+        .duty            = 0,                       // Channel duty
+        .hpoint          = 0                        // Horizontal point / phase control; [0, 2 ** duty_resolution - 1]
+    };
+    ESP_ERROR_CHECK(ledc_channel_config(&ledc_channel2));
 }
 
 struct led_setting {
@@ -64,6 +107,8 @@ struct led_setting {
     int color;
     int last_button;
     int mode;
+    int LED_Duty;
+    int dutyChange;
 };
 
 struct led_setting led_color;
@@ -82,16 +127,16 @@ void left_btn_isr(){
     if (leftBtnTime - leftLastBtnTime > 250){
         LBtn.pressed = true;
         leftLastBtnTime = leftBtnTime;
-        
-        /* Static color check transition */
+
+        /* STATIC substate check */
         if (CURR_STATE == YTP && LBtn.locked == false){
            CURR_STATE = RGB;
         }
-        /* Static color check transition */
         else if (CURR_STATE == RGB && LBtn.locked == false) {
            CURR_STATE = YTP;
            last_button = LEFT;
         }
+        /* BREATHE substate check */
     }
 }
 
@@ -100,6 +145,8 @@ void right_btn_isr(){
     if (rightBtnTime - rightLastBtnTime > 250){
         RBtn.pressed = true;
         rightLastBtnTime = rightBtnTime;
+
+        /* STATIC substate check */
         if (CURR_STATE == YTP && (RBtn.locked == false)){
             CURR_STATE = RGB;
         }
@@ -107,17 +154,18 @@ void right_btn_isr(){
             CURR_STATE = YTP;
             last_button = RIGHT;
         }
+        /* BREATHE substate check */
     }
 }
 
 static void gpio_init(void){
     // Initialization of the GPIO pins
-    myGPIO.pin_bit_mask = (LED_R_BIT_MASK | LED_G_BIT_MASK | LED_B_BIT_MASK);
-    myGPIO.pull_down_en = GPIO_PULLDOWN_DISABLE;
-    myGPIO.pull_up_en   = GPIO_PULLUP_DISABLE;
-    myGPIO.intr_type    = GPIO_INTR_DISABLE;
-    myGPIO.mode         = GPIO_MODE_OUTPUT;
-    gpio_config(&myGPIO);
+    // myGPIO.pin_bit_mask = (LED_R_BIT_MASK | LED_G_BIT_MASK | LED_B_BIT_MASK);
+    // myGPIO.pull_down_en = GPIO_PULLDOWN_DISABLE;
+    // myGPIO.pull_up_en   = GPIO_PULLUP_DISABLE;
+    // myGPIO.intr_type    = GPIO_INTR_DISABLE;
+    // myGPIO.mode         = GPIO_MODE_OUTPUT;
+    // gpio_config(&myGPIO);
 
     // Initialization of ISRs
     gpio_install_isr_service(ESP_INTR_FLAG_LEVEL1);
@@ -193,11 +241,11 @@ static void disp_init(void){
 
 void app_main(void){
     int holdTimer = 0;
-
+    led_color.LED_Duty = LEDC_MAX_RES;
+    led_color.dutyChange = (LEDC_MAX_RES / (2 * LEDC_DUTY_RES));
+    
     // LED FSM
     while(1){
-        //printf("Current state: %d, Button: L %d / R %d\n", CURR_STATE, LBtn.pressed, RBtn.pressed);
-
         /* If user is holding left button, disable right button */
         while(gpio_get_level(L_BTN) && (CURR_STATE != INIT)){
             gpio_set_direction(R_BTN, GPIO_MODE_DISABLE);
@@ -236,6 +284,7 @@ void app_main(void){
             }
             vTaskDelay(1);
         }
+        /* Begin FSM */
         switch (CURR_STATE){
         case INIT:
             gpio_init();
@@ -251,6 +300,7 @@ void app_main(void){
             vTaskDelay(100);
             break;
         
+            /* Static state */
         case RGB:
             /* Left Button */
             printf("State: Static\n");
@@ -337,8 +387,6 @@ void app_main(void){
             // }
             break;
 
-/****************************************************************************************************************************/
-
         case YTP:            
             printf("State: Static2\n");
             ssd1306_printFixed((DISPL_X >> 2), (DISPL_Y >> 1), "Mode: STATIC   ", STYLE_NORMAL);
@@ -400,46 +448,34 @@ void app_main(void){
             //     gpio_set_level(led_color.current_pin, false);
             // }
             break;
+        /* END STATIC */
 
+        /* Breathe */
         case BREATHE:
 
             ssd1306_printFixed((DISPL_X >> 2), (DISPL_Y >> 1), "Mode: BREATHE", STYLE_NORMAL);
+            ssd1306_printFixed(DISPL_X >> 2, DISPL_Y, "Speed: ", STYLE_ITALIC);
             printf("In breathe\n");
-        /* 
-            while (button press == true AND button signal is HIGH){
-                btnTimer++;
-            }
-            if (btnTimer >= holdTrigger (2 sec) && LBtn.pressed == TRUE){
-                mode changes to previous
-                state changes to previous state
-                btnTimer == 0;
-            }
-            else if (btnTimer >= holdTrigger (2 sec) && RBtn.pressed == TRUE){
-                mode changes to next
-                state changes to next state
-                btnTimer == 0;
-            }
-            else if (btnTimer < holdTrigger){
-                btnTimer == 0;
-            }
-            break;
-        */
-            //CURR_STATE = RGB;
-            break;
 
+            break;
+        /* END BREATHE */
 
+        /* Wave */
         case WAVE:
             ssd1306_printFixed((DISPL_X >> 2), (DISPL_Y >> 1), "Mode: WAVE   ", STYLE_NORMAL);
             printf("In wave\n");
             break;
+        /* END WAVE */
 
+        /* No no zone */
         default:
             printf("Oopsies, state: %d\n", CURR_STATE);
             vTaskDelay(100);
             break;
         }
+        /* END FSM */
 
-        /* After buttons are no longer held, re-enable them */
+        /* After buttons are no longer held, re-enable and reset timer */
         holdTimer = 0;
         if (LBtn.pressed){
             LBtn.locked = false;
@@ -452,8 +488,7 @@ void app_main(void){
         vTaskDelay(10);
 
         /*// Breathing Function
-        int LED_Duty = LEDC_MAX_RES;
-        int dutyChange = (LEDC_MAX_RES / (2 * LEDC_DUTY_RES));
+        
         for (;;){
             // LED 100% Duty
             //printf("LEDC Set duty = %d\n\n", LED_Duty);
