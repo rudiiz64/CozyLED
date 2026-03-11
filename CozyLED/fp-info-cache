@@ -1,4 +1,4 @@
-27874143217253682
+27879463416965442
 Audio_Module
 Reverb_BTDR-1H
 Digital Reverberation Unit, http://www.belton.co.kr/inc/downfile.php?seq=17&file=pdf (footprint from http://www.uk-electronic.de/PDF/BTDR-1.pdf)
@@ -2967,6 +2967,48 @@ Gauge Massstab 100mm SilkScreenTop Type 2
 0
 0
 0
+Capacitor Alum
+CAP_EEFK_H13_PAN
+
+EEV-FK2A470Q 
+0
+2
+2
+Capacitor Alum
+CAP_EEFK_H13_PAN-L
+
+EEV-FK2A470Q 
+0
+2
+2
+Capacitor Alum
+CAP_EEFK_H13_PAN-M
+
+EEV-FK2A470Q 
+0
+2
+2
+Capacitor Tantalum
+PCAP_594D_C_VIS
+
+594D476X0016C2T 
+0
+2
+2
+Capacitor Tantalum
+PCAP_594D_C_VIS-L
+
+594D476X0016C2T 
+0
+2
+2
+Capacitor Tantalum
+PCAP_594D_C_VIS-M
+
+594D476X0016C2T 
+0
+2
+2
 Capacitor_SMD
 CP_Elec_3x5.3
 SMT capacitor, aluminium electrolytic, 3x5.3, Cornell Dubilier Electronics 
@@ -99609,27 +99651,6 @@ WiFi IEEE802.11 b/g/n
 0
 44
 44
-Reg_Switch
-21-0041B_8_MXM
-
-max5033aasa+T 
-0
-8
-8
-Reg_Switch
-21-0041B_8_MXM-L
-
-max5033aasa+T 
-0
-8
-8
-Reg_Switch
-21-0041B_8_MXM-M
-
-max5033aasa+T 
-0
-8
-8
 Relay_SMD
 Relay_2P2T_10x6mm_TE_IMxxG
 Signal Relay, 10x6mm, 2 Form C, Gull Wings, https://www.te.com/commerce/DocumentDelivery/DDEController?Action=showdoc&DocId=Data+Sheet%7F108-98001%7FZ.1%7Fpdf%7FEnglish%7FENG_DS_108-98001_Z.1.pdf
@@ -101954,6 +101975,13 @@ rotary encoder illuminated switch vertical
 0
 9
 8
+Schottky Diode THT
+DIOAD2855W132L835D505
+D0-201AD
+Diode
+0
+2
+2
 Sensor
 ASAIR_AM2302_P2.54mm_Lead2.75mm_TabDown
 Temperature and humidity module, http://akizukidenshi.com/download/ds/aosong/AM2302.pdf
@@ -111131,13 +111159,6 @@ Varistor VF
 0
 2
 2
-esp
-ESP32-WROVER-E_EXP
-
-ESP32-WROVER-E-N16R8 
-0
-47
-47
 footprints
 SOT-23-5_M5_MCH
 
