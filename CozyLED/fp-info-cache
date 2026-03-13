@@ -1,4 +1,4 @@
-27879463416965442
+27884783437995286
 Audio_Module
 Reverb_BTDR-1H
 Digital Reverberation Unit, http://www.belton.co.kr/inc/downfile.php?seq=17&file=pdf (footprint from http://www.uk-electronic.de/PDF/BTDR-1.pdf)
@@ -63146,6 +63146,13 @@ heatsink
 0
 0
 0
+Inductor
+DO5022P154MLD
+DO5022P-154MLD-2
+Inductor
+0
+2
+2
 Inductor_SMD
 L_6.3x6.3_H3
 Choke, SMD, 6.3x6.3mm 3mm height
@@ -99651,6 +99658,13 @@ WiFi IEEE802.11 b/g/n
 0
 44
 44
+Reg_Switch
+SOIC127P600X175-8N
+
+
+0
+8
+8
 Relay_SMD
 Relay_2P2T_10x6mm_TE_IMxxG
 Signal Relay, 10x6mm, 2 Form C, Gull Wings, https://www.te.com/commerce/DocumentDelivery/DDEController?Action=showdoc&DocId=Data+Sheet%7F108-98001%7FZ.1%7Fpdf%7FEnglish%7FENG_DS_108-98001_Z.1.pdf
@@ -111159,6 +111173,13 @@ Varistor VF
 0
 2
 2
+esp
+ESP32-WROVER-E_EXP
+
+ESP32-WROVER-E-N16R8 
+0
+47
+47
 footprints
 SOT-23-5_M5_MCH
 
