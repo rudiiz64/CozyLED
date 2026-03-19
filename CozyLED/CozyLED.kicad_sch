@@ -6,8 +6,8 @@
 	(paper "A4")
 	(title_block
 		(title "CozyLED")
-		(date "2026-03-11")
-		(rev "B")
+		(date "2026-03-19")
+		(rev "1.0")
 	)
 	(lib_symbols
 		(symbol "Capacitor:594D476X0016C2T"
@@ -310,9 +310,9 @@
 			)
 			(embedded_fonts no)
 		)
-		(symbol "Connector:Barrel_Jack"
+		(symbol "Connector:Barrel_Jack_Switch"
 			(pin_names
-				(offset 1.016)
+				(hide yes)
 			)
 			(exclude_from_sim no)
 			(in_bom yes)
@@ -325,7 +325,7 @@
 					)
 				)
 			)
-			(property "Value" "Barrel_Jack"
+			(property "Value" "Barrel_Jack_Switch"
 				(at 0 -5.08 0)
 				(effects
 					(font
@@ -351,7 +351,7 @@
 					(hide yes)
 				)
 			)
-			(property "Description" "DC Barrel Jack"
+			(property "Description" "DC Barrel Jack with an internal switch"
 				(at 0 0 0)
 				(effects
 					(font
@@ -378,7 +378,7 @@
 					(hide yes)
 				)
 			)
-			(symbol "Barrel_Jack_0_1"
+			(symbol "Barrel_Jack_Switch_0_1"
 				(rectangle
 					(start -5.08 3.81)
 					(end 5.08 -3.81)
@@ -426,6 +426,18 @@
 						(type outline)
 					)
 				)
+				(polyline
+					(pts
+						(xy 1.27 -2.286) (xy 1.905 -1.651)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
 				(rectangle
 					(start 3.683 3.175)
 					(end -3.302 1.905)
@@ -449,8 +461,20 @@
 						(type none)
 					)
 				)
+				(polyline
+					(pts
+						(xy 5.08 0) (xy 1.27 0) (xy 1.27 -2.286) (xy 0.635 -1.651)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
 			)
-			(symbol "Barrel_Jack_1_1"
+			(symbol "Barrel_Jack_Switch_1_1"
 				(pin passive line
 					(at 7.62 2.54 180)
 					(length 2.54)
@@ -462,6 +486,24 @@
 						)
 					)
 					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 7.62 0 180)
+					(length 2.54)
+					(name "~"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "3"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -3358,7 +3400,7 @@
 	)
 	(rectangle
 		(start 167.64 78.74)
-		(end 281.94 111.76)
+		(end 281.94 142.494)
 		(stroke
 			(width 0)
 			(type default)
@@ -3479,6 +3521,12 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "35a53433-f841-4246-a473-d1f321dd1883")
+	)
+	(junction
+		(at 35.56 33.02)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "4150519b-892e-4987-9c58-e417cf396bbf")
 	)
 	(junction
 		(at 124.46 78.74)
@@ -3714,6 +3762,16 @@
 	)
 	(wire
 		(pts
+			(xy 35.56 30.48) (xy 35.56 33.02)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "05fb0a42-fa33-429c-8231-cac8d5803fc0")
+	)
+	(wire
+		(pts
 			(xy 22.86 85.09) (xy 22.86 86.36)
 		)
 		(stroke
@@ -3844,16 +3902,6 @@
 	)
 	(wire
 		(pts
-			(xy 213.36 58.42) (xy 213.36 60.96)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "1ad00b7b-8675-4b62-8bc2-cc11929c126a")
-	)
-	(wire
-		(pts
 			(xy 114.3 78.74) (xy 124.46 78.74)
 		)
 		(stroke
@@ -3964,6 +4012,16 @@
 	)
 	(wire
 		(pts
+			(xy 210.82 127) (xy 215.9 127)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "2c88662f-89fd-441d-b515-d05357f4ec5a")
+	)
+	(wire
+		(pts
 			(xy 175.26 66.04) (xy 185.42 66.04)
 		)
 		(stroke
@@ -4071,6 +4129,16 @@
 			(type default)
 		)
 		(uuid "3a848769-2a54-46b7-a12b-f2fc89107143")
+	)
+	(wire
+		(pts
+			(xy 223.52 116.84) (xy 223.52 121.92)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "3ad819ee-872a-4ec0-a45f-f7e6053025cb")
 	)
 	(wire
 		(pts
@@ -4854,6 +4922,16 @@
 	)
 	(wire
 		(pts
+			(xy 33.02 30.48) (xy 35.56 30.48)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "a9816b33-e7d0-400a-bd89-c2f96896dbf2")
+	)
+	(wire
+		(pts
 			(xy 78.74 40.64) (xy 81.28 40.64)
 		)
 		(stroke
@@ -4881,6 +4959,16 @@
 			(type default)
 		)
 		(uuid "ae80fc4d-6895-43b6-9b9d-4d7e217f70a0")
+	)
+	(wire
+		(pts
+			(xy 223.52 132.08) (xy 223.52 137.16)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "af59b1e2-2e93-47ed-8724-25f3e47054f3")
 	)
 	(wire
 		(pts
@@ -5252,7 +5340,7 @@
 		)
 		(uuid "02018c31-3cba-412f-8848-8bb744e930f4")
 	)
-	(label "LED_PWR"
+	(label "GPIO_PWR"
 		(at 53.34 104.14 0)
 		(effects
 			(font
@@ -5292,7 +5380,7 @@
 		)
 		(uuid "2a90582e-f171-4cc8-a081-2237fa429c73")
 	)
-	(label "LED_G"
+	(label "GPIO_G"
 		(at 53.34 99.06 0)
 		(effects
 			(font
@@ -5311,6 +5399,16 @@
 			(justify left bottom)
 		)
 		(uuid "2eb0b691-edb2-4fd6-85f2-0c75a420ce1f")
+	)
+	(label "LED_PWR"
+		(at 213.36 60.96 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "2fe426cd-55a8-4a7a-ac4d-61aa199d97e9")
 	)
 	(label "RXD0"
 		(at 251.46 66.04 0)
@@ -5332,7 +5430,7 @@
 		)
 		(uuid "3bf1ab9f-5de4-4cc7-b628-6765e95be946")
 	)
-	(label "LED_G"
+	(label "LED_R"
 		(at 213.36 66.04 0)
 		(effects
 			(font
@@ -5342,7 +5440,7 @@
 		)
 		(uuid "52405eb7-67c2-47eb-a748-d1f4c11174bd")
 	)
-	(label "LED_R"
+	(label "LED_B"
 		(at 213.36 63.5 0)
 		(effects
 			(font
@@ -5362,7 +5460,7 @@
 		)
 		(uuid "61769bf5-bfd4-40c5-af5b-921cbb3cad0d")
 	)
-	(label "LED_B"
+	(label "GPIO_B"
 		(at 53.34 96.52 0)
 		(effects
 			(font
@@ -5492,7 +5590,7 @@
 		)
 		(uuid "ce986de0-9147-4830-94a2-8011f566497c")
 	)
-	(label "LED_B"
+	(label "LED_G"
 		(at 213.36 68.58 0)
 		(effects
 			(font
@@ -5501,6 +5599,26 @@
 			(justify left bottom)
 		)
 		(uuid "ced8f4d3-b394-452d-a8ca-2c442c7b6055")
+	)
+	(label "LED_PWR"
+		(at 223.52 137.16 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "e0e4f172-b7c7-403b-9d93-4f5a82a9c080")
+	)
+	(label "GPIO_PWR"
+		(at 210.82 127 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "e4ff8c5e-995a-4984-b64a-6adedaedb47d")
 	)
 	(label "SDA"
 		(at 177.8 58.42 0)
@@ -5522,7 +5640,7 @@
 		)
 		(uuid "f0898470-d255-433a-818a-61dd8b4f3aad")
 	)
-	(label "LED_R"
+	(label "GPIO_R"
 		(at 53.34 101.6 0)
 		(effects
 			(font
@@ -6769,6 +6887,71 @@
 		)
 	)
 	(symbol
+		(lib_id "power:+12V")
+		(at 223.52 116.84 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "42dbd276-cf35-4270-9b99-3f4a7e582457")
+		(property "Reference" "#PWR027"
+			(at 223.52 120.65 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "+12V"
+			(at 223.52 113.03 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 223.52 116.84 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 223.52 116.84 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"+12V\""
+			(at 223.52 116.84 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "112638ab-4e7f-4c78-87e1-b9bd5361139a")
+		)
+		(instances
+			(project "CozyLED"
+				(path "/e62a3694-b21f-4907-86ee-805d49819e97"
+					(reference "#PWR027")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "power:GND")
 		(at 27.94 88.9 0)
 		(unit 1)
@@ -6892,71 +7075,6 @@
 			(project "CozyLED"
 				(path "/e62a3694-b21f-4907-86ee-805d49819e97"
 					(reference "#PWR017")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "power:+12V")
-		(at 213.36 58.42 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "4bef314f-8c8d-430b-a1ef-9e2ae2de2cb9")
-		(property "Reference" "#PWR08"
-			(at 213.36 62.23 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Value" "+12V"
-			(at 213.36 54.61 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" ""
-			(at 213.36 58.42 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 213.36 58.42 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Power symbol creates a global label with name \"+12V\""
-			(at 213.36 58.42 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "69fcb2de-08ce-45e2-b20b-cba45f4f2e8d")
-		)
-		(instances
-			(project "CozyLED"
-				(path "/e62a3694-b21f-4907-86ee-805d49819e97"
-					(reference "#PWR08")
 					(unit 1)
 				)
 			)
@@ -7366,74 +7484,6 @@
 		)
 	)
 	(symbol
-		(lib_id "Connector:Barrel_Jack")
-		(at 25.4 30.48 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "69e51fe7-6712-44a8-83fa-fc4b003255fd")
-		(property "Reference" "J1"
-			(at 25.4 25.4 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "Barrel_Jack"
-			(at 25.4 24.13 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Footprint" "Connector_BarrelJack:BarrelJack_SwitchcraftConxall_RAPC10U_Horizontal"
-			(at 26.67 31.496 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 26.67 31.496 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "DC Barrel Jack"
-			(at 25.4 30.48 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "2"
-			(uuid "ad572265-cfd4-451d-9844-d8a0cf3f5b91")
-		)
-		(pin "1"
-			(uuid "f55b6d37-0f33-4db3-ab3d-d93741aca2aa")
-		)
-		(instances
-			(project ""
-				(path "/e62a3694-b21f-4907-86ee-805d49819e97"
-					(reference "J1")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "power:GND")
 		(at 48.26 114.3 0)
 		(unit 1)
@@ -7807,6 +7857,77 @@
 			(project "CozyLED"
 				(path "/e62a3694-b21f-4907-86ee-805d49819e97"
 					(reference "#PWR019")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Connector:Barrel_Jack_Switch")
+		(at 25.4 30.48 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "791f5cda-e29f-475d-9b7d-826473252e15")
+		(property "Reference" "J1"
+			(at 25.4 25.4 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "Barrel_Jack_Switch"
+			(at 25.4 24.13 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Footprint" "Connector_BarrelJack:BarrelJack_Horizontal"
+			(at 26.67 31.496 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 26.67 31.496 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "DC Barrel Jack with an internal switch"
+			(at 25.4 30.48 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "3"
+			(uuid "63e803d3-ff6a-4aa7-9d88-d5222a2ee9e3")
+		)
+		(pin "1"
+			(uuid "662d8c66-3cfb-4071-a763-6c8f9b738998")
+		)
+		(pin "2"
+			(uuid "a8ac7c79-c0e8-475f-bdd9-5d978ce2cacc")
+		)
+		(instances
+			(project ""
+				(path "/e62a3694-b21f-4907-86ee-805d49819e97"
+					(reference "J1")
 					(unit 1)
 				)
 			)
@@ -8577,6 +8698,81 @@
 			(project ""
 				(path "/e62a3694-b21f-4907-86ee-805d49819e97"
 					(reference "R1")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Transistor_FET:AO3400A")
+		(at 220.98 127 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "c45e0b16-bc86-4e44-84d7-b541eb2bfb0a")
+		(property "Reference" "Q4"
+			(at 226.06 125.73 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "AO3400A"
+			(at 226.06 128.27 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Package_TO_SOT_SMD:SOT-23"
+			(at 226.06 128.905 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+					(italic yes)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "http://www.aosmd.com/pdfs/datasheet/AO3400A.pdf"
+			(at 226.06 130.81 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Description" "30V Vds, 5.7A Id, N-Channel MOSFET, SOT-23"
+			(at 220.98 127 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "9a132e55-31da-4979-bb2a-c09f3f048604")
+		)
+		(pin "3"
+			(uuid "de5c2155-d15b-4519-93da-ccf2b06925e8")
+		)
+		(pin "2"
+			(uuid "f244bb9e-5ce5-4de9-856f-27d7af1e5200")
+		)
+		(instances
+			(project "CozyLED"
+				(path "/e62a3694-b21f-4907-86ee-805d49819e97"
+					(reference "Q4")
 					(unit 1)
 				)
 			)
