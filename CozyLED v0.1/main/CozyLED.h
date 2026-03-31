@@ -86,3 +86,24 @@ struct btn_status {
 
 
 #endif
+
+/*// Breathing Function
+        
+        for (;;){
+            // LED 100% Duty
+            //printf("LEDC Set duty = %d\n\n", LED_Duty);
+            if (LED_Duty - dutyChange < 0){                     // If next duty change is zero or negative, enter
+                LED_Duty -= LED_Duty;                           // Instead of entering negative, we hit zero
+                dutyChange *= -1;
+            }
+            else if (LED_Duty - dutyChange > LEDC_MAX_RES){     // If we are going to exceed the max resolution value, enter
+                LED_Duty += (LEDC_MAX_RES - LED_Duty);          // We add the remainder of LED_Duty to hit max res 
+                dutyChange *= -1;
+            }
+            ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, LED_Duty);
+            ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
+            printf("Duty: %ld\n",ledc_get_duty(LEDC_MODE, LEDC_CHANNEL));
+
+            vTaskDelay(100 / portTICK_PERIOD_MS);
+            LED_Duty -= dutyChange;
+        }*/
