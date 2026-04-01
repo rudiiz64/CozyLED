@@ -5,6 +5,7 @@
 
 // Variable Defines
 #define HOLD_TIMER      250
+#define INIT_CHECK      9
 
 // I2C Defines
 #define I2C_ADDR        0x3C

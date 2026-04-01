@@ -53,7 +53,7 @@ static void ledc_init(){
         .timer_sel       = LEDC_TIMER_0,              // Controller timer
         .intr_type       = LEDC_INTR_DISABLE,       // Interrupt type
         .gpio_num        = LED_R,                   // GPIO assignment
-        .duty            = 0,                       // Channel duty
+        .duty            = LEDC_MAX_RES,                       // Channel duty
         .hpoint          = 0                        // Horizontal point / phase control; [0, 2 ** duty_resolution - 1]
     };
     ESP_ERROR_CHECK(ledc_channel_config(&ledc_channel0));
@@ -183,11 +183,6 @@ static void gpio_init(void){
     gpio_input_enable(L_BTN);
     gpio_set_direction(R_BTN, GPIO_MODE_INPUT);
     gpio_input_enable(R_BTN);
-
-    // Boot pattern: (R on, G on, B on) -> (R off, G on, B on) -> (R off, G off, B on) -> (R off, G off, B off)
-    // (R on, G on, B on)
-    
-    vTaskDelay(10);
     
     vTaskDelay(10);
 }
@@ -213,32 +208,38 @@ static void disp_init(void){
     ssd1306_128x64_init();
     ssd1306_fillScreen(0x00);
     ssd1306_setFixedFont(ssd1306xled_font6x8);
-    for (int i = 0; i < 9; i++){
+    for (int i = 0; i < INIT_CHECK; i++){
         if (i == 0 || i == 3 || i == 6){
             ssd1306_clearScreen();
             ssd1306_printFixed(0, 16, "Initializing system, please wait.", STYLE_NORMAL);
-            ledc_set_duty(LEDC_MODE, LEDC_CHANNEL_0, LEDC_MAX_RES);
-            ledc_update_duty(LEDC_MODE, LEDC_CHANNEL_0);
+            //ledc_set_duty(LEDC_MODE, LEDC_CHANNEL_0, false);
+            //ledc_update_duty(LEDC_MODE, LEDC_CHANNEL_0);
         }
         else if (i == 1 || i == 4 || i == 7){
             ssd1306_printFixed(0, 16, "Initializing system, please wait..", STYLE_NORMAL);
-            ledc_set_duty(LEDC_MODE, LEDC_CHANNEL_1, LEDC_MAX_RES);
-            ledc_update_duty(LEDC_MODE, LEDC_CHANNEL_1);
+            //ledc_set_duty(LEDC_MODE, LEDC_CHANNEL_1, false);
+            //ledc_update_duty(LEDC_MODE, LEDC_CHANNEL_1);
         }
         else if (i == 2 || i == 5 || i == 8){
             ssd1306_printFixed(0, 16, "Initializing system, please wait...", STYLE_NORMAL);
-            ledc_set_duty(LEDC_MODE, LEDC_CHANNEL_2, LEDC_MAX_RES);
-            ledc_update_duty(LEDC_MODE, LEDC_CHANNEL_2);
+            //ledc_set_duty(LEDC_MODE, LEDC_CHANNEL_2, false);
+            //ledc_update_duty(LEDC_MODE, LEDC_CHANNEL_2);
         }
-        vTaskDelay(50);
+        vTaskDelay(100);
     }
     /* Clear screen of loading drawing */
-    ledc_set_duty(LEDC_MODE, LEDC_CHANNEL_0, false);
-    ledc_update_duty(LEDC_MODE, LEDC_CHANNEL_0);
-    ledc_set_duty(LEDC_MODE, LEDC_CHANNEL_1, false);
-    ledc_update_duty(LEDC_MODE, LEDC_CHANNEL_1);
-    ledc_set_duty(LEDC_MODE, LEDC_CHANNEL_2, false);
-    ledc_update_duty(LEDC_MODE, LEDC_CHANNEL_2);
+    // ledc_set_duty(LEDC_MODE, LEDC_CHANNEL_0, false);
+    // ledc_update_duty(LEDC_MODE, LEDC_CHANNEL_0);
+    // vTaskDelay(1000 / portTICK_PERIOD_MS);
+
+    // ledc_set_duty(LEDC_MODE, LEDC_CHANNEL_1, false);
+    // ledc_update_duty(LEDC_MODE, LEDC_CHANNEL_1);
+    // vTaskDelay(1000 / portTICK_PERIOD_MS);
+
+    // ledc_set_duty(LEDC_MODE, LEDC_CHANNEL_2, false);
+    // ledc_update_duty(LEDC_MODE, LEDC_CHANNEL_2);
+    // vTaskDelay(1000 / portTICK_PERIOD_MS);
+
     ssd1306_clearScreen();
 
     /* Draw Text for mode and title */
@@ -259,12 +260,12 @@ static void disp_init(void){
 }
 
 void app_main(void){
-    int holdTimer = 0;
+    int holdTimer = false;
     led_color.LED_Duty = LEDC_MAX_RES;
     led_color.dutyChange = (LEDC_MAX_RES / (2 * LEDC_DUTY_RES));
     
     // LED FSM
-    while(1){
+    while(true){
         /* If user is holding left button, disable right button */
         while(gpio_get_level(L_BTN) && (CURR_STATE != INIT)){
             gpio_set_direction(R_BTN, GPIO_MODE_DISABLE);
@@ -307,24 +308,30 @@ void app_main(void){
         /* Begin FSM */
         switch (CURR_STATE){
         case INIT:
-            gpio_set_level(LED_PWR, true);
             gpio_init();
+            gpio_set_level(LED_PWR, true);
             ledc_init();
             i2c_init();
             disp_init();
             led_color.current_ch = LEDC_CHANNEL_0;
             led_color.color = RED;
+            LBtn.locked = false;
+            RBtn.locked = false;
             
             CURR_STATE = YTP;
             led_color.mode = LCD_STATIC;
+            //ledc_set_duty(LEDC_MODE, LEDC_CHANNEL_1, led_color.LED_Duty);
+            //ledc_update_duty(LEDC_MODE, LEDC_CHANNEL_1);
+           // ledc_set_duty(LEDC_MODE, LEDC_CHANNEL_2, led_color.LED_Duty);
+            //ledc_update_duty(LEDC_MODE, LEDC_CHANNEL_2);
 
-            vTaskDelay(100);
+            vTaskDelay(100 / portTICK_PERIOD_MS);
             break;
         
             /* Static state */
         case RGB:
             /* Left Button */
-            printf("State: Static\n");
+            //printf("State: Static\n");
             ssd1306_printFixed((DISPL_X >> 2), (DISPL_Y >> 1), "Mode: STATIC", STYLE_NORMAL);
             // Yellow -> Red
             if (LBtn.pressed && led_color.color == YELLOW){
@@ -341,7 +348,8 @@ void app_main(void){
                 led_color.prev_ch = led_color.current_ch;
                 led_color.current_ch = LEDC_CHANNEL_0;
                 led_color.color = RED;
-                LBtn.pressed = false;
+                printf("Yellow -> Red\n");
+                //LBtn.pressed = false;
             }
             // Teal -> Green
             else if (LBtn.pressed && led_color.color == TEAL){
@@ -358,7 +366,8 @@ void app_main(void){
                 led_color.prev_ch = led_color.current_ch;
                 led_color.current_ch = LEDC_CHANNEL_1;
                 led_color.color = GREEN;
-                LBtn.pressed = false;
+                printf("Teal -> Green\n");
+                //LBtn.pressed = false;
             }
             // Purple -> Blue
             else if (LBtn.pressed && led_color.color == PURPLE){
@@ -375,7 +384,8 @@ void app_main(void){
                 led_color.prev_ch = led_color.current_ch;
                 led_color.current_ch = LEDC_CHANNEL_2;
                 led_color.color = BLUE;
-                LBtn.pressed = false;
+                printf("Purple -> Blue\n");
+                //LBtn.pressed = false;
             }
 
             /* Right Button */
@@ -394,7 +404,8 @@ void app_main(void){
                 led_color.prev_ch = led_color.current_ch;
                 led_color.current_ch = LEDC_CHANNEL_1;
                 led_color.color = GREEN;
-                RBtn.pressed = false;
+                printf("Yellow -> Green\n");
+                //RBtn.pressed = false;
             }
             // Teal -> Blue
             else if (RBtn.pressed && led_color.color == TEAL){
@@ -411,14 +422,15 @@ void app_main(void){
                 led_color.prev_ch = led_color.current_ch;
                 led_color.current_ch = LEDC_CHANNEL_2;
                 led_color.color = BLUE;
-                RBtn.pressed = false;
+                printf("Teal -> Blue\n");
+                //RBtn.pressed = false;
             }
             // Purple -> Red
             else if (RBtn.pressed && led_color.color == PURPLE){
                 if (last_button == RIGHT){
                     //gpio_set_level(led_color.prev_ch, true);
-                    ledc_set_duty(LEDC_MODE, led_color.prev_ch, false);
-                    ledc_update_duty(LEDC_MODE, led_color.prev_ch);
+                    ledc_set_duty(LEDC_MODE, led_color.current_ch, false);
+                    ledc_update_duty(LEDC_MODE, led_color.current_ch);
                 }
                 else {
                     //gpio_set_level(led_color.current_ch, true);
@@ -428,12 +440,13 @@ void app_main(void){
                 led_color.prev_ch = led_color.current_ch;
                 led_color.current_ch = LEDC_CHANNEL_0;
                 led_color.color = RED;
-                RBtn.pressed = false;
+                printf("Purple -> Red\n");
+                //RBtn.pressed = false;
             }
             break;
 
         case YTP:            
-            printf("State: Static2\n");
+            //printf("State: Static2\n");
             ssd1306_printFixed((DISPL_X >> 2), (DISPL_Y >> 1), "Mode: STATIC   ", STYLE_NORMAL);
             /* Left Button */
             // Red -> Purple
@@ -442,10 +455,11 @@ void app_main(void){
                 led_color.prev_ch = led_color.current_ch;
                 led_color.current_ch = LEDC_CHANNEL_2;
                 led_color.color = PURPLE;
-                LBtn.pressed = false;
+                //LBtn.pressed = false;
                 //gpio_set_level(led_color.current_ch, false);
                 ledc_set_duty(LEDC_MODE, led_color.current_ch, led_color.LED_Duty);
                 ledc_update_duty(LEDC_MODE, led_color.current_ch);
+                printf("Red -> Purple\n");
             }
 
             // Green -> Yellow
@@ -454,10 +468,11 @@ void app_main(void){
                 led_color.prev_ch = led_color.current_ch;
                 led_color.current_ch = LEDC_CHANNEL_0;
                 led_color.color = YELLOW;
-                LBtn.pressed = false;
+                //LBtn.pressed = false;
                 //gpio_set_level(led_color.current_ch, false);
                 ledc_set_duty(LEDC_MODE, led_color.current_ch, led_color.LED_Duty);
                 ledc_update_duty(LEDC_MODE, led_color.current_ch);
+                printf("Green -> Yellow\n");
             }
 
             // Blue -> Teal
@@ -466,43 +481,46 @@ void app_main(void){
                 led_color.prev_ch = led_color.current_ch;
                 led_color.current_ch = LEDC_CHANNEL_1;
                 led_color.color = TEAL;
-                LBtn.pressed = false;
+                //LBtn.pressed = false;
                 //gpio_set_level(led_color.current_ch, false);
                 ledc_set_duty(LEDC_MODE, led_color.current_ch, led_color.LED_Duty);
                 ledc_update_duty(LEDC_MODE, led_color.current_ch);
+                printf("Blue -> Teal\n");
             }
 
             /* Right Button */
             // Red -> Yellow
             else if (RBtn.pressed && led_color.color == RED){
-                
                 led_color.prev_ch = led_color.current_ch;
                 led_color.current_ch = LEDC_CHANNEL_1;
                 led_color.color = YELLOW;
-                RBtn.pressed = false;
+                //RBtn.pressed = false;
                 //gpio_set_level(led_color.current_ch, false);
                 ledc_set_duty(LEDC_MODE, led_color.current_ch, led_color.LED_Duty);
                 ledc_update_duty(LEDC_MODE, led_color.current_ch);
+                printf("Red -> Yellow\n");
             }
             // Green -> Teal
             else if (RBtn.pressed && led_color.color == GREEN){
                 led_color.prev_ch = led_color.current_ch;
                 led_color.current_ch = LEDC_CHANNEL_2;
                 led_color.color = TEAL;
-                RBtn.pressed = false;
+                //RBtn.pressed = false;
                 //gpio_set_level(led_color.current_ch, false);
                 ledc_set_duty(LEDC_MODE, led_color.current_ch, led_color.LED_Duty);
                 ledc_update_duty(LEDC_MODE, led_color.current_ch);
+                printf("Green -> Teal\n");
             }
             // Blue -> Purple
             else if (RBtn.pressed && led_color.color == BLUE){
                 led_color.prev_ch = led_color.current_ch;
                 led_color.current_ch = LEDC_CHANNEL_0;
                 led_color.color = PURPLE;
-                RBtn.pressed = false;
+                //RBtn.pressed = false;
                 //gpio_set_level(led_color.current_ch, false);
                 ledc_set_duty(LEDC_MODE, led_color.current_ch, led_color.LED_Duty);
                 ledc_update_duty(LEDC_MODE, led_color.current_ch);
+                printf("Blue -> Purple\n");
             }
             break;
         /* END STATIC */
@@ -536,13 +554,15 @@ void app_main(void){
         holdTimer = 0;
         if (LBtn.pressed){
             LBtn.locked = false;
+            LBtn.pressed = false;
             gpio_set_direction(R_BTN, GPIO_MODE_INPUT);
         }
         else if (RBtn.pressed){
             RBtn.locked = false;
+            RBtn.pressed = false;
             gpio_set_direction(L_BTN, GPIO_MODE_INPUT);
         }
-        vTaskDelay(10);
+        vTaskDelay(100 / portTICK_PERIOD_MS);
 
         /*// Breathing Function
         
