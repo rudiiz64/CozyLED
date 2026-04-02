@@ -47,7 +47,8 @@
 #define LEDC_DUTY       (2048)              // Set duty to 25% (2 ** 13) * 25% = 2048
 #define LEDC_FREQUENCY  (5000)              // Frequency in Hz
 #define LEDC_FADE_TIME  (3000)
-#define LEDC_MAX_RES    (7373)             // Max duty 90% (2 ** 13) * 90% ~ 7373
+#define LEDC_MAX_RES    (8192)             // Max duty 90% (2 ** 13) * 90% ~ 7373
+#define LEDC_ON         (819)              // output inverted, using 10% as 90%
 
 enum STATE {
     INIT = 0,
