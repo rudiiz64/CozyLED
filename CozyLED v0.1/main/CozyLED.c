@@ -31,10 +31,11 @@ volatile unsigned long leftBtnTime = 0;
 volatile unsigned long leftLastBtnTime = 0;
 volatile unsigned long rightBtnTime = 0;
 volatile unsigned long rightLastBtnTime = 0;
+int last_button = NONE;
+bool colorShift = false;
 
 // State Declaration
 int CURR_STATE = INIT;
-int last_button = NONE;
 
 static void ledc_init(){
     /* RED LED SETUP */
@@ -106,11 +107,11 @@ struct led_setting {
     ledc_channel_t prev_ch;
     ledc_timer_t current_tim;
     ledc_timer_t prev_tim;
-    int color;
-    int last_button;
-    int mode;
-    int LED_Duty;
-    int dutyChange;
+    uint8_t color;
+    uint8_t last_button;
+    uint32_t LED_Duty;
+    uint32_t dutyChange;
+    uint32_t freq;
 };
 
 struct led_setting led_color;
@@ -251,8 +252,9 @@ static void disp_init(void){
 
 void app_main(void){
     int holdTimer = false;
-    led_color.LED_Duty = LEDC_MAX_RES;
+    led_color.LED_Duty = LEDC_ON;
     led_color.dutyChange = (LEDC_MAX_RES / (2 * LEDC_DUTY_RES));
+    led_color.freq = LEDC_FREQUENCY;
     
     // LED FSM
     while(true){
@@ -303,13 +305,19 @@ void app_main(void){
             ledc_init();
             i2c_init();
             disp_init();
+
+            /* Initial values for the LED struct */
             led_color.current_ch = LEDC_CHANNEL_0;
+            led_color.current_tim = LEDC_TIMER_0;
+            led_color.prev_ch = LEDC_CHANNEL_2;
+            led_color.prev_tim = LEDC_TIMER_2;
             led_color.color = RED;
+
+            /* Unlock buttons */
             LBtn.locked = false;
             RBtn.locked = false;
             
             CURR_STATE = YTP;
-            led_color.mode = LCD_STATIC;
 
             /* Enable RED */
             ledc_set_duty(LEDC_MODE, LEDC_CHANNEL_0, LEDC_ON);
@@ -321,7 +329,6 @@ void app_main(void){
             /* Static state */
         case RGB:
             /* Left Button */
-            //printf("State: Static\n");
             ssd1306_printFixed((DISPL_X >> 2), (DISPL_Y >> 1), "Mode: STATIC", STYLE_NORMAL);
             // Yellow -> Red
             if (LBtn.pressed && led_color.color == YELLOW){
@@ -331,7 +338,6 @@ void app_main(void){
                     ledc_update_duty(LEDC_MODE, led_color.prev_ch);
                 }
                 else {
-                    //gpio_set_level(led_color.current_ch, true);
                     ledc_set_duty(LEDC_MODE, led_color.current_ch, LEDC_MAX_RES);
                     ledc_update_duty(LEDC_MODE, led_color.current_ch);
                 }
@@ -339,17 +345,14 @@ void app_main(void){
                 led_color.current_ch = LEDC_CHANNEL_0;
                 led_color.color = RED;
                 printf("Yellow -> Red\n");
-                //LBtn.pressed = false;
             }
             // Teal -> Green
             else if (LBtn.pressed && led_color.color == TEAL){
                 if (last_button == LEFT){
-                    //gpio_set_level(led_color.prev_ch, true);
                     ledc_set_duty(LEDC_MODE, led_color.prev_ch, LEDC_MAX_RES);
                     ledc_update_duty(LEDC_MODE, led_color.prev_ch);
                 }
                 else {
-                    //gpio_set_level(led_color.current_ch, true);
                     ledc_set_duty(LEDC_MODE, led_color.current_ch, LEDC_MAX_RES);
                     ledc_update_duty(LEDC_MODE, led_color.current_ch);
                 }
@@ -357,17 +360,14 @@ void app_main(void){
                 led_color.current_ch = LEDC_CHANNEL_1;
                 led_color.color = GREEN;
                 printf("Teal -> Green\n");
-                //LBtn.pressed = false;
             }
             // Purple -> Blue
             else if (LBtn.pressed && led_color.color == PURPLE){
                 if (last_button == LEFT){
-                    //gpio_set_level(led_color.prev_ch, true);
                     ledc_set_duty(LEDC_MODE, led_color.prev_ch, LEDC_MAX_RES);
                     ledc_update_duty(LEDC_MODE, led_color.prev_ch);
                 }
                 else {
-                   // gpio_set_level(led_color.current_ch, true);
                     ledc_set_duty(LEDC_MODE, led_color.current_ch, LEDC_MAX_RES);
                     ledc_update_duty(LEDC_MODE, led_color.current_ch);
                 }
@@ -375,19 +375,16 @@ void app_main(void){
                 led_color.current_ch = LEDC_CHANNEL_2;
                 led_color.color = BLUE;
                 printf("Purple -> Blue\n");
-                //LBtn.pressed = false;
             }
 
             /* Right Button */
             // Yellow -> Green
             else if (RBtn.pressed && led_color.color == YELLOW){
                 if (last_button == RIGHT){
-                    //gpio_set_level(led_color.prev_ch, true);
                     ledc_set_duty(LEDC_MODE, led_color.prev_ch, LEDC_MAX_RES);
                     ledc_update_duty(LEDC_MODE, led_color.prev_ch);
                 }
                 else {
-                    //gpio_set_level(led_color.current_ch, true);
                     ledc_set_duty(LEDC_MODE, led_color.current_ch, LEDC_MAX_RES);
                     ledc_update_duty(LEDC_MODE, led_color.current_ch);
                 }
@@ -395,17 +392,14 @@ void app_main(void){
                 led_color.current_ch = LEDC_CHANNEL_1;
                 led_color.color = GREEN;
                 printf("Yellow -> Green\n");
-                //RBtn.pressed = false;
             }
             // Teal -> Blue
             else if (RBtn.pressed && led_color.color == TEAL){
                 if (last_button == RIGHT){
-                    //gpio_set_level(led_color.prev_ch, true);
                     ledc_set_duty(LEDC_MODE, led_color.prev_ch, LEDC_MAX_RES);
                     ledc_update_duty(LEDC_MODE, led_color.prev_ch);
                 }
                 else {
-                    //gpio_set_level(led_color.current_ch, true);
                     ledc_set_duty(LEDC_MODE, led_color.current_ch, LEDC_MAX_RES);
                     ledc_update_duty(LEDC_MODE, led_color.current_ch);
                 }
@@ -413,17 +407,14 @@ void app_main(void){
                 led_color.current_ch = LEDC_CHANNEL_2;
                 led_color.color = BLUE;
                 printf("Teal -> Blue\n");
-                //RBtn.pressed = false;
             }
             // Purple -> Red
             else if (RBtn.pressed && led_color.color == PURPLE){
                 if (last_button == RIGHT){
-                    //gpio_set_level(led_color.prev_ch, true);
                     ledc_set_duty(LEDC_MODE, led_color.prev_ch, LEDC_MAX_RES);
                     ledc_update_duty(LEDC_MODE, led_color.prev_ch);
                 }
                 else {
-                    //gpio_set_level(led_color.current_ch, true);
                     ledc_set_duty(LEDC_MODE, led_color.current_ch, LEDC_MAX_RES);
                     ledc_update_duty(LEDC_MODE, led_color.current_ch);
                 }
@@ -431,12 +422,10 @@ void app_main(void){
                 led_color.current_ch = LEDC_CHANNEL_0;
                 led_color.color = RED;
                 printf("Purple -> Red\n");
-                //RBtn.pressed = false;
             }
             break;
 
         case YTP:            
-            //printf("State: Static2\n");
             ssd1306_printFixed((DISPL_X >> 2), (DISPL_Y >> 1), "Mode: STATIC   ", STYLE_NORMAL);
             /* Left Button */
             // Red -> Purple
@@ -445,8 +434,6 @@ void app_main(void){
                 led_color.prev_ch = led_color.current_ch;
                 led_color.current_ch = LEDC_CHANNEL_2;
                 led_color.color = PURPLE;
-                //LBtn.pressed = false;
-                //gpio_set_level(led_color.current_ch, false);
                 ledc_set_duty(LEDC_MODE, led_color.current_ch, LEDC_ON);
                 ledc_update_duty(LEDC_MODE, led_color.current_ch);
                 printf("Red -> Purple\n");
@@ -458,8 +445,6 @@ void app_main(void){
                 led_color.prev_ch = led_color.current_ch;
                 led_color.current_ch = LEDC_CHANNEL_0;
                 led_color.color = YELLOW;
-                //LBtn.pressed = false;
-                //gpio_set_level(led_color.current_ch, false);
                 ledc_set_duty(LEDC_MODE, led_color.current_ch, LEDC_ON);
                 ledc_update_duty(LEDC_MODE, led_color.current_ch);
                 printf("Green -> Yellow\n");
@@ -471,8 +456,6 @@ void app_main(void){
                 led_color.prev_ch = led_color.current_ch;
                 led_color.current_ch = LEDC_CHANNEL_1;
                 led_color.color = TEAL;
-                //LBtn.pressed = false;
-                //gpio_set_level(led_color.current_ch, false);
                 ledc_set_duty(LEDC_MODE, led_color.current_ch, LEDC_ON);
                 ledc_update_duty(LEDC_MODE, led_color.current_ch);
                 printf("Blue -> Teal\n");
@@ -484,8 +467,6 @@ void app_main(void){
                 led_color.prev_ch = led_color.current_ch;
                 led_color.current_ch = LEDC_CHANNEL_1;
                 led_color.color = YELLOW;
-                //RBtn.pressed = false;
-                //gpio_set_level(led_color.current_ch, false);
                 ledc_set_duty(LEDC_MODE, led_color.current_ch, LEDC_ON);
                 ledc_update_duty(LEDC_MODE, led_color.current_ch);
                 printf("Red -> Yellow\n");
@@ -495,8 +476,6 @@ void app_main(void){
                 led_color.prev_ch = led_color.current_ch;
                 led_color.current_ch = LEDC_CHANNEL_2;
                 led_color.color = TEAL;
-                //RBtn.pressed = false;
-                //gpio_set_level(led_color.current_ch, false);
                 ledc_set_duty(LEDC_MODE, led_color.current_ch, LEDC_ON);
                 ledc_update_duty(LEDC_MODE, led_color.current_ch);
                 printf("Green -> Teal\n");
@@ -506,8 +485,6 @@ void app_main(void){
                 led_color.prev_ch = led_color.current_ch;
                 led_color.current_ch = LEDC_CHANNEL_0;
                 led_color.color = PURPLE;
-                //RBtn.pressed = false;
-                //gpio_set_level(led_color.current_ch, false);
                 ledc_set_duty(LEDC_MODE, led_color.current_ch, LEDC_ON);
                 ledc_update_duty(LEDC_MODE, led_color.current_ch);
                 printf("Blue -> Purple\n");
@@ -534,29 +511,61 @@ void app_main(void){
                Button press will change the frequency of transition
                Button hold will freeze 
             */
-            if (LBtn.pressed && led_color.LED_Duty > 0){ // CHANGE THIS TO FREQUENCY VAR
+            if (LBtn.pressed && led_color.freq > 0){ // CHANGE THIS TO FREQUENCY VAR
                 /* Decrement frequency function including failsafe (if 0, discard action) */
-                  
-                ledc_set_freq(LEDC_MODE, led_color.prev_tim, (LEDC_FREQUENCY-500));     // Frequency shift needs testing to find a good shift up and down that is noticeable
+                led_color.freq -= LEDC_FREQ_CHANGE;
+                ledc_set_freq(LEDC_MODE, led_color.prev_tim, led_color.freq);     // Frequency shift needs testing to find a good shift up and down that is noticeable
                 
                 // If the value of the frequency is at 0, then ignore the button press
                 LBtn.pressed = false;
 
             }
             
-           else if (RBtn.pressed){
+            else if (RBtn.pressed && led_color.freq < LEDC_FREQUENCY){
                 /* Increment frequency function including failsafe (if overflow, discard action) */
-                if (led_color.LED_Duty < LEDC_FREQUENCY){
-                    ledc_set_freq(LEDC_MODE, led_color.prev_tim, (LEDC_FREQUENCY+500));
+                if (led_color.LED_Duty < led_color.freq){
+                    led_color.freq += LEDC_FREQ_CHANGE;
+                    ledc_set_freq(LEDC_MODE, led_color.prev_tim, led_color.freq);
                 }
                 RBtn.pressed = false;
 
            }
 
            /* Take stored color and channel to begin
-           Both channels are at 90% brightness */
-           
+           One channel must always be on, at max duty cycle; if both, then begin turning off previous channel */
+           if ((ledc_get_duty(LEDC_MODE, led_color.current_ch) == LEDC_ON) && (ledc_get_duty(LEDC_MODE, led_color.prev_ch) == LEDC_MAX_RES)){     // Current channel is at max, i.e. red/green/blue
+                led_color.LED_Duty -= led_color.dutyChange;
+                led_color.prev_ch = led_color.current_ch;
+                led_color.prev_tim = led_color.current_tim;
+                
 
+                led_color.current_ch += 1;
+                led_color.current_tim += 1;
+                
+                /* Begin lighting next channel */
+                ledc_set_duty(LEDC_MODE, led_color.current_ch, led_color.LED_Duty);
+                ledc_update_duty(LEDC_MODE, led_color.current_ch);
+                led_color.LED_Duty -= led_color.dutyChange;
+                colorShift = true;
+           }
+           else if ((ledc_get_duty(LEDC_MODE, led_color.current_ch) == LEDC_ON) && (ledc_get_duty(LEDC_MODE, led_color.prev_ch) == LEDC_ON)){ // Both colors are on at max, i.e. yellow/teal/purple
+                led_color.LED_Duty += led_color.dutyChange;
+
+                /* Begin turning off previous channel */
+                ledc_set_duty(LEDC_MODE, led_color.prev_ch, led_color.LED_Duty);
+                ledc_update_duty(LEDC_MODE, led_color.prev_ch);
+                colorShift = false;
+           }
+
+           /* Overflow & underflow safety net */
+           if (led_color.LED_Duty - led_color.dutyChange > LEDC_MAX_RES){
+                led_color.LED_Duty += (LEDC_MAX_RES - led_color.LED_Duty);
+                led_color.dutyChange *= -1;
+           }
+           else if (led_color.LED_Duty - led_color.dutyChange < 0){
+                led_color.LED_Duty -= led_color.LED_Duty;
+                led_color.LED_Duty *= -1;
+           }
 
 
             break;
