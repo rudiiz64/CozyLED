@@ -42,7 +42,7 @@ static void ledc_init(){
     ledc_timer_config_t ledc_timer0 = {
         .speed_mode      = LEDC_MODE,               // High or low speed
         .duty_resolution = LEDC_DUTY_RES,           // Max Range of cap, [0, 2 ** duty_resolution]
-        .timer_num       = LEDC_TIMER_0,              // Controller Timer
+        .timer_num       = LEDC_TIMER_0,            // Controller Timer
         .freq_hz         = LEDC_FREQUENCY,          // Frequency (higher freq -> lower res, lower freq -> higher res)
         .clk_cfg         = LEDC_AUTO_CLK            // Clock config, pre-defined
     };
@@ -50,11 +50,11 @@ static void ledc_init(){
 
     ledc_channel_config_t ledc_channel0 = {
         .speed_mode      = LEDC_MODE,               // High or low speed
-        .channel         = LEDC_CHANNEL_0,            // Channel per controller
-        .timer_sel       = LEDC_TIMER_0,              // Controller timer
+        .channel         = LEDC_CHANNEL_0,          // Channel per controller
+        .timer_sel       = LEDC_TIMER_0,            // Controller timer
         .intr_type       = LEDC_INTR_DISABLE,       // Interrupt type
         .gpio_num        = LED_R,                   // GPIO assignment
-        .duty            = LEDC_MAX_RES,                       // Channel duty
+        .duty            = LEDC_MAX_RES,            // Channel duty
         .hpoint          = 0                        // Horizontal point / phase control; [0, 2 ** duty_resolution - 1]
     };
     ESP_ERROR_CHECK(ledc_channel_config(&ledc_channel0));
@@ -63,7 +63,7 @@ static void ledc_init(){
     ledc_timer_config_t ledc_timer1 = {
         .speed_mode      = LEDC_MODE,               // High or low speed
         .duty_resolution = LEDC_DUTY_RES,           // Max Range of cap, [0, 2 ** duty_resolution]
-        .timer_num       = LEDC_TIMER_1,              // Controller Timer
+        .timer_num       = LEDC_TIMER_1,            // Controller Timer
         .freq_hz         = LEDC_FREQUENCY,          // Frequency (higher freq -> lower res, lower freq -> higher res)
         .clk_cfg         = LEDC_AUTO_CLK            // Clock config, pre-defined
     };
@@ -71,11 +71,11 @@ static void ledc_init(){
 
     ledc_channel_config_t ledc_channel1 = {
         .speed_mode      = LEDC_MODE,               // High or low speed
-        .channel         = LEDC_CHANNEL_1,            // Channel per controller
-        .timer_sel       = LEDC_TIMER_1,              // Controller timer
+        .channel         = LEDC_CHANNEL_1,          // Channel per controller
+        .timer_sel       = LEDC_TIMER_1,            // Controller timer
         .intr_type       = LEDC_INTR_DISABLE,       // Interrupt type
         .gpio_num        = LED_G,                   // GPIO assignment
-        .duty            = LEDC_MAX_RES,                       // Channel duty
+        .duty            = LEDC_MAX_RES,            // Channel duty
         .hpoint          = 0                        // Horizontal point / phase control; [0, 2 ** duty_resolution - 1]
     };
     ESP_ERROR_CHECK(ledc_channel_config(&ledc_channel1));
@@ -96,7 +96,7 @@ static void ledc_init(){
         .timer_sel       = LEDC_TIMER_2,            // Controller timer
         .intr_type       = LEDC_INTR_DISABLE,       // Interrupt type
         .gpio_num        = LED_B,                   // GPIO assignment
-        .duty            = LEDC_MAX_RES,                       // Channel duty
+        .duty            = LEDC_MAX_RES,            // Channel duty
         .hpoint          = 0                        // Horizontal point / phase control; [0, 2 ** duty_resolution - 1]
     };
     ESP_ERROR_CHECK(ledc_channel_config(&ledc_channel2));
@@ -504,24 +504,22 @@ void app_main(void){
         /* Wave */
         case WAVE:
             ssd1306_printFixed((DISPL_X >> 2), (DISPL_Y >> 1), "Mode: WAVE   ", STYLE_NORMAL);
-            printf("In wave\n");
 
             /* Section for initial breath -> color carries over from previous mode 
                Starting color will start at max, next channel will increment to max, then previous channel will decrement to 0
                Button press will change the frequency of transition
                Button hold will freeze 
             */
-            if (LBtn.pressed && led_color.freq > 0){ // CHANGE THIS TO FREQUENCY VAR
+            if (LBtn.pressed && led_color.freq > 0){
                 /* Decrement frequency function including failsafe (if 0, discard action) */
                 led_color.freq -= LEDC_FREQ_CHANGE;
                 ledc_set_freq(LEDC_MODE, led_color.prev_tim, led_color.freq);     // Frequency shift needs testing to find a good shift up and down that is noticeable
                 
                 // If the value of the frequency is at 0, then ignore the button press
                 LBtn.pressed = false;
-
             }
             
-            else if (RBtn.pressed && led_color.freq < LEDC_FREQUENCY){
+            else if (RBtn.pressed && led_color.freq < LEDC_MAX_FREQUENCY){
                 /* Increment frequency function including failsafe (if overflow, discard action) */
                 if (led_color.LED_Duty < led_color.freq){
                     led_color.freq += LEDC_FREQ_CHANGE;
@@ -534,40 +532,68 @@ void app_main(void){
            /* Take stored color and channel to begin
            One channel must always be on, at max duty cycle; if both, then begin turning off previous channel */
            if ((ledc_get_duty(LEDC_MODE, led_color.current_ch) == LEDC_ON) && (ledc_get_duty(LEDC_MODE, led_color.prev_ch) == LEDC_MAX_RES)){     // Current channel is at max, i.e. red/green/blue
-                led_color.LED_Duty -= led_color.dutyChange;
+                printf("Max RGB\n");
+                //led_color.LED_Duty -= led_color.dutyChange;
                 led_color.prev_ch = led_color.current_ch;
                 led_color.prev_tim = led_color.current_tim;
                 
-
-                led_color.current_ch += 1;
-                led_color.current_tim += 1;
+                // If current channel is blue, loop to red
+                if (led_color.current_ch == LEDC_CHANNEL_2){
+                    led_color.current_ch = LEDC_CHANNEL_0;
+                    led_color.current_tim = LEDC_TIMER_0;
+                }
+                else {
+                    led_color.current_ch += 1;
+                    led_color.current_tim += 1;
+                }
                 
                 /* Begin lighting next channel */
-                ledc_set_duty(LEDC_MODE, led_color.current_ch, led_color.LED_Duty);
-                ledc_update_duty(LEDC_MODE, led_color.current_ch);
-                led_color.LED_Duty -= led_color.dutyChange;
+                led_color.LED_Duty = LEDC_MAX_RES;
+                //ledc_set_duty(LEDC_MODE, led_color.current_ch, led_color.LED_Duty);
+                //ledc_update_duty(LEDC_MODE, led_color.current_ch);
+                //led_color.LED_Duty -= led_color.dutyChange;
                 colorShift = true;
            }
            else if ((ledc_get_duty(LEDC_MODE, led_color.current_ch) == LEDC_ON) && (ledc_get_duty(LEDC_MODE, led_color.prev_ch) == LEDC_ON)){ // Both colors are on at max, i.e. yellow/teal/purple
-                led_color.LED_Duty += led_color.dutyChange;
+                printf("Max YTP\n");
+                //led_color.LED_Duty += led_color.dutyChange;
 
                 /* Begin turning off previous channel */
-                ledc_set_duty(LEDC_MODE, led_color.prev_ch, led_color.LED_Duty);
-                ledc_update_duty(LEDC_MODE, led_color.prev_ch);
+                //ledc_set_duty(LEDC_MODE, led_color.prev_ch, led_color.LED_Duty);
+                //ledc_update_duty(LEDC_MODE, led_color.prev_ch);
                 colorShift = false;
            }
 
-           /* Overflow & underflow safety net */
-           if (led_color.LED_Duty - led_color.dutyChange > LEDC_MAX_RES){
-                led_color.LED_Duty += (LEDC_MAX_RES - led_color.LED_Duty);
-                led_color.dutyChange *= -1;
+           /* Perform wave action */
+           // RGB color -> increase duty of current channel
+           if (colorShift){
+                if (led_color.LED_Duty - led_color.dutyChange < LEDC_ON){
+                    printf("Overflow: %ld\n", led_color.LED_Duty);
+                    led_color.LED_Duty = LEDC_ON;
+                    led_color.dutyChange *= -1;
+                }
+                else {
+                    printf("Increment current: %ld\n", led_color.LED_Duty);
+                    led_color.LED_Duty -= led_color.dutyChange;
+                }
+                ledc_set_duty(LEDC_MODE, led_color.current_ch, led_color.LED_Duty);
+                ledc_update_duty(LEDC_MODE, led_color.current_ch);
+                
            }
-           else if (led_color.LED_Duty - led_color.dutyChange < 0){
-                led_color.LED_Duty -= led_color.LED_Duty;
-                led_color.LED_Duty *= -1;
+           // YTP color -> decrease duty of previous channel
+           else {
+                if (led_color.LED_Duty - led_color.dutyChange > LEDC_MAX_RES){
+                    printf("underflow: %ld\n", led_color.LED_Duty);
+                    led_color.LED_Duty += (LEDC_MAX_RES - led_color.LED_Duty);
+                    led_color.dutyChange *= -1;
+                }
+                else {
+                    printf("Decrement prev: %ld\n", led_color.LED_Duty);
+                    led_color.LED_Duty -= led_color.dutyChange;
+                }
+                ledc_set_duty(LEDC_MODE, led_color.prev_ch, led_color.LED_Duty);
+                ledc_update_duty(LEDC_MODE, led_color.prev_ch);
            }
-
-
             break;
         /* END WAVE */
 

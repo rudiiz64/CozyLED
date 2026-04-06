@@ -42,11 +42,12 @@
 #define LEDC_MODE       LEDC_LOW_SPEED_MODE
 #define LEDC_DUTY_RES   LEDC_TIMER_13_BIT   // Set duty resolution to 13-bits
 
-#define LEDC_DUTY        (2048)              // Set duty to 25% (2 ** 13) * 25% = 2048
-#define LEDC_FREQUENCY   (5000)              // Frequency in Hz
-#define LEDC_FREQ_CHANGE (500)               // Incremental change to frequency value
-#define LEDC_MAX_RES     (8192)             // Max duty 90% (2 ** 13) * 90% ~ 7373
-#define LEDC_ON          (819)              // output inverted, using 10% as 90%
+#define LEDC_DUTY          (2048)              // Set duty to 25% (2 ** 13) * 25% = 2048
+#define LEDC_MAX_FREQUENCY (5000)              // Frequency in Hz
+#define LEDC_FREQUENCY     (2500)
+#define LEDC_FREQ_CHANGE   (500)               // Incremental change to frequency value
+#define LEDC_MAX_RES       (8192)             // Max duty 90% (2 ** 13) * 90% ~ 7373
+#define LEDC_ON            (819)              // output inverted, using 10% as 90%
 
 enum STATE {
     INIT = 0,
