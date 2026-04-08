@@ -263,12 +263,25 @@ void app_main(void){
             gpio_set_direction(R_BTN, GPIO_MODE_DISABLE);
             holdTimer++;
             if (holdTimer >= HOLD_TIMER){                                           // If holdTimer exceeds 2 sec, change state and break
+                last_button = LEFT;
                 LBtn.locked = true;                                      
                 holdTimer = 0;
                 if (CURR_STATE == RGB || CURR_STATE == YTP){                         // If we are in RGB/YTP, then we just loop to last state WAVE (4)
                     CURR_STATE = WAVE;
                 }
                 else {                                                               // If we are not in RGB/YTP, subtract 1
+                    if (CURR_STATE == WAVE && colorShift == true){
+                        ledc_set_duty(LEDC_MODE, led_color.current_ch, LEDC_ON);
+                        ledc_set_duty(LEDC_MODE, led_color.prev_ch, LEDC_ON);
+                        ledc_update_duty(LEDC_MODE, led_color.current_ch);
+                        ledc_update_duty(LEDC_MODE, led_color.prev_ch);
+                    }
+                    else if (CURR_STATE == WAVE && colorShift == false){
+                        ledc_set_duty(LEDC_MODE, led_color.current_ch, LEDC_ON);
+                        ledc_set_duty(LEDC_MODE, led_color.prev_ch, LEDC_MAX_RES);
+                        ledc_update_duty(LEDC_MODE, led_color.current_ch);
+                        ledc_update_duty(LEDC_MODE, led_color.prev_ch);
+                    }
                     CURR_STATE = CURR_STATE - 1;
                 }
                 break;
@@ -281,6 +294,7 @@ void app_main(void){
             gpio_set_direction(L_BTN, GPIO_MODE_DISABLE);
             holdTimer++;
             if (holdTimer >= HOLD_TIMER){                       // If holdTimer exceeds 2 sec, change state and break
+                last_button = RIGHT;
                 RBtn.locked = true;
                 holdTimer = 0;
                 if (CURR_STATE == WAVE){                         // If we are in WAVE (4), then we just loop to first state RGB (1)
@@ -289,7 +303,19 @@ void app_main(void){
                 else if (CURR_STATE == RGB || CURR_STATE == YTP){                                          // If we are not in WAVE, just add 1 from enum
                     CURR_STATE = BREATHE;
                 }
-                else {
+                else {  
+                    if (CURR_STATE == WAVE && colorShift == true){
+                        ledc_set_duty(LEDC_MODE, led_color.current_ch, LEDC_ON);
+                        ledc_set_duty(LEDC_MODE, led_color.prev_ch, LEDC_ON);
+                        ledc_update_duty(LEDC_MODE, led_color.current_ch);
+                        ledc_update_duty(LEDC_MODE, led_color.prev_ch);
+                    }
+                    else if (CURR_STATE == WAVE && colorShift == false){
+                        ledc_set_duty(LEDC_MODE, led_color.current_ch, LEDC_ON);
+                        ledc_set_duty(LEDC_MODE, led_color.prev_ch, LEDC_MAX_RES);
+                        ledc_update_duty(LEDC_MODE, led_color.current_ch);
+                        ledc_update_duty(LEDC_MODE, led_color.prev_ch);
+                    }
                     CURR_STATE = CURR_STATE + 1;
                 }
                 break;
@@ -510,13 +536,13 @@ void app_main(void){
                Button press will change the frequency of transition
                Button hold will freeze 
             */
-            if (LBtn.pressed && led_color.freq > 0){
+            if (LBtn.pressed && (led_color.freq - LEDC_FREQ_CHANGE > 0)){
                 /* Decrement frequency function including failsafe (if 0, discard action) */
                 led_color.freq -= LEDC_FREQ_CHANGE;
                 ledc_set_freq(LEDC_MODE, led_color.prev_tim, led_color.freq);     // Frequency shift needs testing to find a good shift up and down that is noticeable
                 
                 // If the value of the frequency is at 0, then ignore the button press
-                LBtn.pressed = false;
+                //LBtn.pressed = false;
             }
             
             else if (RBtn.pressed && led_color.freq < LEDC_MAX_FREQUENCY){
@@ -525,7 +551,7 @@ void app_main(void){
                     led_color.freq += LEDC_FREQ_CHANGE;
                     ledc_set_freq(LEDC_MODE, led_color.prev_tim, led_color.freq);
                 }
-                RBtn.pressed = false;
+                //RBtn.pressed = false;
 
            }
 
@@ -533,34 +559,37 @@ void app_main(void){
            One channel must always be on, at max duty cycle; if both, then begin turning off previous channel */
            if ((ledc_get_duty(LEDC_MODE, led_color.current_ch) == LEDC_ON) && (ledc_get_duty(LEDC_MODE, led_color.prev_ch) == LEDC_MAX_RES)){     // Current channel is at max, i.e. red/green/blue
                 printf("Max RGB\n");
-                //led_color.LED_Duty -= led_color.dutyChange;
                 led_color.prev_ch = led_color.current_ch;
                 led_color.prev_tim = led_color.current_tim;
-                
-                // If current channel is blue, loop to red
-                if (led_color.current_ch == LEDC_CHANNEL_2){
-                    led_color.current_ch = LEDC_CHANNEL_0;
-                    led_color.current_tim = LEDC_TIMER_0;
+                if  (last_button == RIGHT){         // Standard loop direction
+                    // If current channel is blue, loop to red
+                    if (led_color.current_ch == LEDC_CHANNEL_2){
+                        led_color.current_ch = LEDC_CHANNEL_0;
+                        led_color.current_tim = LEDC_TIMER_0;
+                    }
+                    else {                      
+                        led_color.current_ch += 1;
+                        led_color.current_tim += 1;
+                    }
                 }
-                else {
-                    led_color.current_ch += 1;
-                    led_color.current_tim += 1;
+                else if (last_button == LEFT){      // Reverse loop direction
+                    // If current channel is red, loop to blue
+                    if (led_color.current_ch == LEDC_CHANNEL_0){
+                        led_color.current_ch = LEDC_CHANNEL_2;
+                        led_color.current_tim = LEDC_TIMER_2;
+                    }
+                    else {
+                        led_color.current_ch -= 1;
+                        led_color.current_tim -= 1;
+                    }
                 }
                 
                 /* Begin lighting next channel */
                 led_color.LED_Duty = LEDC_MAX_RES;
-                //ledc_set_duty(LEDC_MODE, led_color.current_ch, led_color.LED_Duty);
-                //ledc_update_duty(LEDC_MODE, led_color.current_ch);
-                //led_color.LED_Duty -= led_color.dutyChange;
                 colorShift = true;
            }
            else if ((ledc_get_duty(LEDC_MODE, led_color.current_ch) == LEDC_ON) && (ledc_get_duty(LEDC_MODE, led_color.prev_ch) == LEDC_ON)){ // Both colors are on at max, i.e. yellow/teal/purple
                 printf("Max YTP\n");
-                //led_color.LED_Duty += led_color.dutyChange;
-
-                /* Begin turning off previous channel */
-                //ledc_set_duty(LEDC_MODE, led_color.prev_ch, led_color.LED_Duty);
-                //ledc_update_duty(LEDC_MODE, led_color.prev_ch);
                 colorShift = false;
            }
 
@@ -570,6 +599,11 @@ void app_main(void){
                 if (led_color.LED_Duty - led_color.dutyChange < LEDC_ON){
                     printf("Overflow: %ld\n", led_color.LED_Duty);
                     led_color.LED_Duty = LEDC_ON;
+                    led_color.dutyChange *= -1;
+                }
+                else if (led_color.LED_Duty - led_color.dutyChange > LEDC_MAX_RES){
+                    printf("underflow: %ld\n", led_color.LED_Duty);
+                    led_color.LED_Duty += (LEDC_MAX_RES - led_color.LED_Duty);
                     led_color.dutyChange *= -1;
                 }
                 else {
@@ -585,6 +619,11 @@ void app_main(void){
                 if (led_color.LED_Duty - led_color.dutyChange > LEDC_MAX_RES){
                     printf("underflow: %ld\n", led_color.LED_Duty);
                     led_color.LED_Duty += (LEDC_MAX_RES - led_color.LED_Duty);
+                    led_color.dutyChange *= -1;
+                }
+                else if (led_color.LED_Duty - led_color.dutyChange < LEDC_ON){
+                    printf("Overflow: %ld\n", led_color.LED_Duty);
+                    led_color.LED_Duty = LEDC_ON;
                     led_color.dutyChange *= -1;
                 }
                 else {
